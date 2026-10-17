@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CampaignSchema, JournalEntrySchema, LevelSchema, MetricsSchema } from "./campaign";
-import { ManifestSchema } from "./depot";
+import { ManifestSchema, SkuSchema } from "./depot";
 import { WorkshopSchema as BaseWorkshopSchema, BlueprintSchema, CellSchema, SceneSchema } from "./domain";
 export const StatusSchema = z.enum(["preparing", "working", "verifying", "succeeded", "failed", "canceled"]);
 export const EventSchema = z.object({
@@ -17,8 +17,35 @@ export const ReceiptSchema = z.object({
   verifiedAt: z.string(),
   checks: z.array(z.string()),
 });
+export const ChangeCommandSchema = z
+  .object({
+    runId: z.string().uuid(),
+    sku: SkuSchema,
+    quantity: z.number().int().min(1).max(2),
+  })
+  .strict();
+export const ChangeOrderSchema = ChangeCommandSchema.extend({
+  queuedAt: z.string().datetime(),
+  appliedAt: z.string().datetime().nullable(),
+  before: z.number().int().nonnegative(),
+  after: z.number().int().nonnegative(),
+});
+export const AttemptSchema = z.object({
+  number: z.number().int().min(1).max(8),
+  receivedAt: z.string().datetime(),
+  checkedAt: z.string().datetime().nullable(),
+  sha256: z.string().regex(/^[a-f0-9]{64}$/),
+  bytes: z.number().int().min(1).max(16384),
+  text: z.string().max(16384),
+  accepted: z.boolean().nullable(),
+  reason: z.string().max(1200),
+});
+export type ChangeCommand = z.infer<typeof ChangeCommandSchema>;
 export const RunSchema = z.object({
   id: z.string(),
+  originalLevel: LevelSchema.nullable().default(null),
+  changeOrder: ChangeOrderSchema.nullable().default(null),
+  attempts: z.array(AttemptSchema).max(8).default([]),
   level: LevelSchema.nullable().default(null),
   manifest: ManifestSchema.nullable().default(null),
   memories: z.array(JournalEntrySchema).default([]),
@@ -42,6 +69,7 @@ export const RunSchema = z.object({
 export const WorkshopSchema = BaseWorkshopSchema.extend({
   level: LevelSchema.nullable(),
   memories: z.array(JournalEntrySchema),
+  changeNotice: z.string().nullable().default(null),
 });
 export type Workshop = z.infer<typeof WorkshopSchema>;
 export const StateSchema = z.object({

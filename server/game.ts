@@ -144,6 +144,9 @@ export class Game {
     const memories = recall(this.profile.value.entries, level, campaign.memoryEnabled);
     this.run = {
       id,
+      originalLevel: null,
+      changeOrder: null,
+      attempts: [],
       mode,
       level,
       memories,
