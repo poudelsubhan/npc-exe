@@ -1,0 +1,5 @@
+# One application, two HTTP surfaces
+Context: Pine must reach the workshop over the internet, while only the local player may allocate computers or alter the challenge.
+Decision: a Node process owns two loopback listeners. Port 3210 serves the player and owner APIs; port 3211 serves only static workshop assets and capability-scoped scene reads. Tunnel only 3211. No game control routes exist on 3211. The workshop produces a real downloaded JSON artifact. Server verification drives game state. Runtime state is disposable; receipts/artifacts persist locally. Short-lived delegated desktop tokens reach only the local player.
+Consequences: simple setup with strong separation, one active run, no multiplayer/restart-resume promise. Ephemeral Pine computers are stopped in finally with a short lease as crash fallback. A manual workshop uses the identical artifact contract and is clearly labeled.
+Flip condition: multi-user hosting or durable job recovery requires authenticated users, durable run claims, encrypted credentials and transactional state.
