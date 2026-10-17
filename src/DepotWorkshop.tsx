@@ -69,6 +69,12 @@ export function DepotWorkshop({ workshop }: { workshop: Workshop }) {
         worksheet. <strong>Count each order ID once, using its first occurrence.</strong> Process orders in
         that order. Ship what remaining stock allows; hold the rest.
       </p>
+      {workshop.changeNotice && (
+        <section className="workshop-change" aria-live="polite">
+          <strong>CHANGE ORDER · REVISED STOCK</strong>
+          <p>{workshop.changeNotice}</p>
+        </section>
+      )}
       <FieldNotes workshop={workshop} />
       <section className="inventory-shelf" aria-label="Available inventory">
         {Object.entries(depot.inventory).map(([sku, quantity]) => (

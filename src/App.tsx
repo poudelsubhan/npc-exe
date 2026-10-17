@@ -1,9 +1,11 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import type { GameState } from "../shared/contracts";
+import { type GameState, type Run, RunSchema } from "../shared/contracts";
 import { type Cell, defaultScene, key, type Scene } from "../shared/domain";
-import { action, importArtifact, readState } from "./api";
+import { action, importArtifact, readState, request } from "./api";
 import { CampaignBar, Director, Journal, NextChapter } from "./Campaign";
+import { ArtifactHandoff, ChangeOrder, RecordedDesk, ReplayBar, ReplayPicker, usePlayback } from "./Demo";
 import { DepotWorld } from "./DepotWorld";
+import { downloadFile } from "./download";
 import { Pip, World } from "./World";
 
 const Desktop = lazy(() => import("./Desktop"));
@@ -11,7 +13,18 @@ const isRunning = (state: GameState | null) =>
   !!state?.run && ["preparing", "working", "verifying"].includes(state.run.status);
 const stageLabels = ["Leave the world", "Make something real", "Bring it home"];
 export function App() {
-  const [state, setState] = useState<GameState | null>(null);
+  const [liveState, setState] = useState<GameState | null>(null);
+  const [savedReplay, setSavedReplay] = useState<Run | null>(null);
+  const playback = usePlayback(savedReplay);
+  const state =
+    playback.frame && liveState
+      ? {
+          ...liveState,
+          run: playback.frame,
+          scene: playback.frame.scene,
+          campaign: { ...liveState.campaign, level: playback.frame.level ?? liveState.campaign.level },
+        }
+      : liveState;
   const [draft, setDraft] = useState<Scene>(defaultScene());
   const [editing, setEditing] = useState(false);
   const [pending, setPending] = useState(false);
@@ -61,6 +74,7 @@ export function App() {
     };
   }, []);
   async function act(path: string, data: unknown) {
+    if (savedReplay) return false;
     generation.current++;
     mutating.current = true;
     setPending(true);
@@ -88,10 +102,11 @@ export function App() {
   }
   const scene = editing ? draft : state?.scene || defaultScene();
   const run = state?.run || null;
-  const depot = state?.campaign.level.mission === "depot";
-  const running = isRunning(state);
+  const level = run?.level ?? state?.campaign.level;
+  const depot = level?.mission === "depot";
+  const running = !savedReplay && isRunning(state);
   const cleanupPending = run?.cleanup === "pending" && !running;
-  const disabled = pending || running || !!cleanupPending || !state;
+  const disabled = pending || running || !!cleanupPending || !state || !!savedReplay;
   const successful = run?.status === "succeeded";
   const arrivedHome = arrived && successful && !editing;
   const stage = successful ? 2 : run?.status === "working" || run?.status === "verifying" ? 1 : 0;
@@ -137,6 +152,22 @@ export function App() {
     }
     if (importInput.current) importInput.current.value = "";
   }
+  async function openReplay(id: string) {
+    setPending(true);
+    setError("");
+    try {
+      const saved = RunSchema.parse(await request(`/api/replay?id=${encodeURIComponent(id)}`));
+      setSavedReplay(saved);
+      setWide(true);
+      setArrived(false);
+      setEditing(false);
+      setShowReceipt(false);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not load replay.");
+    } finally {
+      setPending(false);
+    }
+  }
   const latestEvent = run?.events.at(-1);
   return (
     <div className={`app-shell ${wide ? "theater" : ""} ${run ? "has-run" : ""}`}>
@@ -152,18 +183,25 @@ export function App() {
           <span className="edition">THE LITTLE LIGHT CHRONICLES</span>
         </a>
         <nav aria-label="Game controls">
+          {liveState && (
+            <ReplayPicker state={liveState} disabled={pending || isRunning(liveState)} choose={openReplay} />
+          )}
           <span className="connection-pill">
             <i className={state?.ready.pine && state.ready.workshop ? "connected" : ""} />
-            {state?.ready.pine && state.ready.workshop ? "Pine connected" : "Local world"}
+            {savedReplay
+              ? "SAVED REPLAY"
+              : state?.ready.pine && state.ready.workshop
+                ? "Pine connected"
+                : "Local world"}
           </span>
           <button
             type="button"
-            className="icon-button"
-            aria-label={wide ? "Exit theater mode" : "Theater mode"}
-            title="Theater mode"
+            className="text-button presentation-button"
+            aria-label={wide ? "Exit presentation mode" : "Presentation mode"}
+            title="Presentation mode"
             onClick={() => setWide(!wide)}
           >
-            ⛶
+            {wide ? "Exit presentation" : "Present ⛶"}
           </button>
           <button
             type="button"
@@ -175,7 +213,32 @@ export function App() {
           </button>
         </nav>
       </header>
-      {state && (
+      {savedReplay && (
+        <ReplayBar
+          saved={savedReplay}
+          playback={playback}
+          close={() => {
+            setSavedReplay(null);
+            setArrived(false);
+            setShowReceipt(false);
+          }}
+        />
+      )}
+      {wide && (
+        <div className="presentation-brief">
+          <span className="eyebrow">
+            {savedReplay
+              ? "RECORDED JOURNEY"
+              : run
+                ? run.mode === "pine"
+                  ? "LIVE JOURNEY"
+                  : "MANUAL REHEARSAL"
+                : "THE NEXT JOURNEY"}
+          </span>
+          <strong>{level?.objective ?? "Help Pip bring something real back to his world."}</strong>
+        </div>
+      )}
+      {state && !wide && !savedReplay && (
         <CampaignBar state={state} disabled={disabled} act={act} openJournal={() => setShowJournal(true)} />
       )}
       <main className="game-layout">
@@ -204,20 +267,20 @@ export function App() {
           <div className="world-topline">
             <span className="world-live">
               <i />
-              {state?.campaign.level.title.toUpperCase() ?? "WORLD 001"}
+              {level?.title.toUpperCase() ?? "WORLD 001"}
             </span>
             <span>REV {String(scene.revision).padStart(2, "0")}</span>
           </div>
           {depot && state ? (
             <DepotWorld
-              key={run?.id || state.campaign.level.id}
-              level={state.campaign.level}
+              key={`${run?.id || state.campaign.level.id}-${playback.generation}`}
+              level={level ?? state.campaign.level}
               run={run}
               onArrive={arrive}
             />
           ) : (
             <World
-              key={run?.id || "waiting"}
+              key={`${run?.id || "waiting"}-${playback.generation}`}
               scene={scene}
               run={run}
               editing={editing}
@@ -225,6 +288,7 @@ export function App() {
               onArrive={arrive}
             />
           )}
+          {run && <ArtifactHandoff key={run.id} run={run} />}
           <div className="world-bottom">
             <div className="character-card">
               <Pip small />
@@ -260,7 +324,7 @@ export function App() {
               </span>
             </div>
           </div>
-          {!depot && (
+          {!depot && !savedReplay && (
             <div className="challenge-bar">
               {editing ? (
                 <>
@@ -334,9 +398,10 @@ export function App() {
             </div>
             <span className="journey-number">01—03</span>
           </div>
-          {state && (
+          {state && !wide && !savedReplay && (
             <Director key={run?.id ?? "settings"} state={state} disabled={disabled || editing} act={act} />
           )}
+          {run && <ChangeOrder key={run.id} run={run} pending={pending} act={act} replay={!!savedReplay} />}
           <p className="journey-intro">
             A character leaves his game, uses real software, and brings back something his world can use.
           </p>
@@ -457,9 +522,12 @@ export function App() {
                         canceled: "Paused at the shore",
                       }[run.status]}
                 </strong>
-                <span className="mode-badge">{run.mode === "pine" ? "LIVE PINE" : "MANUAL"}</span>
+                <span className="mode-badge">
+                  {savedReplay ? "REPLAY" : run.mode === "pine" ? "LIVE PINE" : "MANUAL"}
+                </span>
               </div>
-              {run.desktopReady && (
+              {savedReplay && <RecordedDesk run={run} />}
+              {!savedReplay && run.desktopReady && (
                 <Suspense fallback={<p>Opening live screen…</p>}>
                   <Desktop />
                 </Suspense>
@@ -484,7 +552,7 @@ export function App() {
                   </div>
                 </>
               )}
-              {run.status === "preparing" && (
+              {!savedReplay && run.status === "preparing" && (
                 <div className="opening-computer">
                   <div className="computer-illustration">
                     <span>▧</span>
@@ -543,9 +611,27 @@ export function App() {
                     <dt>SHA-256</dt>
                     <dd className="hash">{run.receipt.sha256}</dd>
                   </dl>
-                  <a href="/api/receipt" download className="text-button">
+                  <button
+                    type="button"
+                    className="text-button"
+                    onClick={() =>
+                      downloadFile(
+                        `receipt-${run.id}.json`,
+                        JSON.stringify(
+                          {
+                            receipt: run.receipt,
+                            manifest: run.manifest,
+                            blueprint: run.blueprint,
+                            level: run.level,
+                          },
+                          null,
+                          2,
+                        ),
+                      )
+                    }
+                  >
                     Download receipt + artifact ↓
-                  </a>
+                  </button>
                 </div>
               )}
               <details className="activity" open={running && run.mode === "pine"}>
@@ -567,37 +653,38 @@ export function App() {
               <output className="sr-only" aria-live="polite">
                 {latestEvent?.text}
               </output>
-              {state && <NextChapter state={state} disabled={disabled} act={act} />}
-              {running ? (
-                <button
-                  type="button"
-                  className="text-button cancel-button"
-                  disabled={pending}
-                  onClick={() => void act("/api/cancel", {})}
-                >
-                  Cancel journey
-                </button>
-              ) : (
-                <div className="retry-actions">
+              {state && !savedReplay && <NextChapter state={state} disabled={disabled} act={act} />}
+              {!savedReplay &&
+                (running ? (
                   <button
                     type="button"
-                    className="primary"
-                    disabled={disabled || !state?.ready.pine || !state.ready.workshop}
-                    onClick={() => void start("pine")}
+                    className="text-button cancel-button"
+                    disabled={pending}
+                    onClick={() => void act("/api/cancel", {})}
                   >
-                    {successful ? "Send Pip again" : "Try again with Pine"} <span>↗</span>
+                    Cancel journey
                   </button>
-                  <button
-                    type="button"
-                    className="text-button"
-                    disabled={disabled}
-                    onClick={() => void start("manual")}
-                  >
-                    Manual workshop
-                  </button>
-                  {cleanupPending && <small>Releasing the previous computer…</small>}
-                </div>
-              )}
+                ) : (
+                  <div className="retry-actions">
+                    <button
+                      type="button"
+                      className="primary"
+                      disabled={disabled || !state?.ready.pine || !state.ready.workshop}
+                      onClick={() => void start("pine")}
+                    >
+                      {successful ? "Send Pip again" : "Try again with Pine"} <span>↗</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="text-button"
+                      disabled={disabled}
+                      onClick={() => void start("manual")}
+                    >
+                      Manual workshop
+                    </button>
+                    {cleanupPending && <small>Releasing the previous computer…</small>}
+                  </div>
+                ))}
             </div>
           )}
           {(error || connectionError || state?.journalError) && (
