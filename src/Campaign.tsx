@@ -161,7 +161,7 @@ export function NextChapter({ state, disabled, act }: { state: GameState; disabl
             disabled={disabled}
             onClick={() => void act("/api/campaign", { action: "replay" })}
           >
-            Replay this exact level ↺
+            Retry this exact level ↺
           </button>
         </div>
       )}

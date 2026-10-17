@@ -61,10 +61,10 @@ Artifacts and receipts are retained separately in `data/`; the 200-entry journal
 
 ## Lifecycle and security
 
-- One active run, including import and computer cleanup. Level/memory changes freeze while work is active.
+- One active run, including import and computer cleanup. Level/memory changes freeze while work is active, except one owner-queued depot stock change applied at first artifact inspection.
 - Each run snapshots its level and selected notes. A random 192-bit capability exposes only that active workspace and expires when the run ends.
 - The tunnel exposes 3211 only. Owner 3210 enforces local Host and same-origin/custom-header mutation checks. Campaign, journal, desktop delegation and imports are owner-only.
-- Limits: 16KB artifact/request body, at most four candidate JSON artifacts, four-minute agent wall limit, six-minute outer deadline, 512K token allowance, 120-second idle lease. Stop/cancel in `finally` and graceful shutdown. No automatic retry loop.
+- Limits: 16KB artifact/request body, at most four new candidate JSON artifacts per turn and eight retained attempts, at most two agent turns with a four-minute per-turn wall limit, six-minute outer deadline, shared 512K token allowance, 120-second idle lease. Stop/cancel in `finally` and graceful shutdown. A rejected artifact permits one bounded repair on the same session; a second rejection ends the journey. Seen artifact IDs are not re-imported.
 - Project key and computer/session credentials stay on the server. The live view receives a short-lived view-only desktop token. Never put the key in Vite variables.
 - Exact exported bytes are saved and hashed, including manual imports. Schemas reject additional control/code fields. Repeated identical imports are idempotent; overlapping imports are rejected.
 - Async polling uses mutation generations so an older read cannot overwrite a newly confirmed user action.
@@ -78,3 +78,17 @@ The production opportunity is reproducible workflow testing for computer-using a
 ## Change conditions
 
 Move to transactional durable storage and jobs before multi-user/cloud hosting or concurrent server instances. Add explicit migrations for profile versions. Add learned curriculum selection only if the transparent policy proves inadequate. Add real business connectors only with a defined data boundary and separate validation; the current synthetic depot makes no such connection.
+
+## Change order and artifact handoff
+
+Owner-only `POST /api/change-order` accepts `{runId, sku, quantity}` with a UUID, known stock item and quantity 1–2. It requires the current active depot journey, sufficient stock and no prior inspection. One command per run; identical retries are harmless. On the first received artifact, retain the original level, subtract the stock, assign a distinct `:damage:<sku>:<quantity>` identity and verify against that revised challenge. The workshop exposes revised stock on reload. The terminal journal persists the changed level, so comparison with an unchanged challenge is not conflated.
+
+Each attempt retains exact UTF-8 text, bytes, SHA-256, receive/check timestamps, verifier result and reason. Rejected exports do not create deliveries. `PineJourney` owns the only repair loop: feed back the verifier reason, reload through browser controls, revise and export anew on the same computer/session. The server does not provide solved worksheet quantities. Token usage/cost aggregate across turns; the outer deadline and final cleanup still cover the whole journey.
+
+The React handoff reads these recorded states. Its envelope animation illustrates receipt, inspection, return or acceptance; it never predicts progress. Both files can be inspected and downloaded. Existing SVG world drawings remain intact. Accepted manifest entries alone supply village deliveries.
+
+## Saved replay and presentation
+
+Owner-only `GET /api/replay?id=<UUID>` admits a known successful Pine journal entry, bounds receipt/artifact reads, validates the stored run and retained hashes, and independently verifies the actual accepted file again. It returns a sanitized run with no usable workshop URL or desktop access. Historical receipts have empty defaults for new attempt/change fields.
+
+A pure timeline projection filters events and attempts by original timestamps and withholds the final artifact/world result until its verified completion time. UI playback is separate from server live state: no replay action creates a computer, changes a campaign or submits a stock change. Presentation mode preserves the real desktop during live work; replay replaces it with a labeled event card, original date and explicit absence of browser video. The original local evidence is required; this is not cloud backup or durable active-job recovery.

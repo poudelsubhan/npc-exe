@@ -1,6 +1,10 @@
 # NPC.exe — Demo extension phase plan
 
-Status: implementation authorized; extension not yet implemented or verified.
+Status: implemented and verified on 2026-10-17. All three features are integrated.
+
+Completed milestones: Phase 1 `c65e305` (39 passing tests); Phase 2 `7a95b94` (44 passing tests); Phase 3 `23c0c4b` (44 passing tests and browser review). Completion includes one genuine live recovery: original file rejected after stock 7 → 5, corrected file accepted with 9 shipped/4 held, 47.491 seconds, USD 0.01896438 reported agent usage, computer released. Saved replay also worked in a fresh process with Pine access disabled. The final local completion commit records the remaining polish and documentation.
+
+See `docs/verification.md` for the actual evidence and limits; the specification below records the intended build sequence.
 
 Execution: one agent, existing local `main` branch in `/Users/poudelsubhan/Projects/npc`. Preserve unrelated work, drawings, credentials and saved journeys. No delegation. Each phase closes with tests, integration and a local conventional commit. The project's explicit local-only exception applies: no remote exists, so no push or deployment. A failed check blocks the next phase.
 

@@ -31,6 +31,9 @@ export function App() {
   const [error, setError] = useState("");
   const [connectionError, setConnectionError] = useState("");
   const [arrived, setArrived] = useState(false);
+  useEffect(() => {
+    if (playback.generation) setArrived(false);
+  }, [playback.generation]);
   const [showReceipt, setShowReceipt] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showJournal, setShowJournal] = useState(false);
@@ -231,7 +234,11 @@ export function App() {
               ? "RECORDED JOURNEY"
               : run
                 ? run.mode === "pine"
-                  ? "LIVE JOURNEY"
+                  ? running
+                    ? "LIVE JOURNEY"
+                    : successful
+                      ? "VERIFIED JOURNEY"
+                      : "JOURNEY ENDED"
                   : "MANUAL REHEARSAL"
                 : "THE NEXT JOURNEY"}
           </span>
@@ -399,9 +406,22 @@ export function App() {
             <span className="journey-number">01—03</span>
           </div>
           {state && !wide && !savedReplay && (
-            <Director key={run?.id ?? "settings"} state={state} disabled={disabled || editing} act={act} />
+            <Director
+              key={`director-${run?.id ?? "settings"}`}
+              state={state}
+              disabled={disabled || editing}
+              act={act}
+            />
           )}
-          {run && <ChangeOrder key={run.id} run={run} pending={pending} act={act} replay={!!savedReplay} />}
+          {run && (
+            <ChangeOrder
+              key={`change-${run.id}`}
+              run={run}
+              pending={pending}
+              act={act}
+              replay={!!savedReplay}
+            />
+          )}
           <p className="journey-intro">
             A character leaves his game, uses real software, and brings back something his world can use.
           </p>
@@ -507,23 +527,35 @@ export function App() {
               <div className="run-status">
                 <span className={`status-dot ${running ? "pulsing" : ""}`} />
                 <strong>
-                  {run.mode === "manual" && running
-                    ? "Manual workshop is open"
-                    : {
-                        preparing: "Opening Pip’s computer",
-                        working: "Pip is in the workshop",
-                        verifying: "Checking the real file",
-                        succeeded: arrivedHome
-                          ? "Delivery complete"
-                          : depot
-                            ? "The evening post is on its way"
-                            : "A bridge enters the world",
-                        failed: "The journey needs another try",
-                        canceled: "Paused at the shore",
-                      }[run.status]}
+                  {savedReplay
+                    ? successful
+                      ? "Recorded result verified"
+                      : "Recorded journey in progress"
+                    : run.mode === "manual" && running
+                      ? "Manual workshop is open"
+                      : {
+                          preparing: "Opening Pip’s computer",
+                          working: "Pip is in the workshop",
+                          verifying: "Checking the real file",
+                          succeeded: arrivedHome
+                            ? "Delivery complete"
+                            : depot
+                              ? "The evening post is on its way"
+                              : "A bridge enters the world",
+                          failed: "The journey needs another try",
+                          canceled: "Paused at the shore",
+                        }[run.status]}
                 </strong>
                 <span className="mode-badge">
-                  {savedReplay ? "REPLAY" : run.mode === "pine" ? "LIVE PINE" : "MANUAL"}
+                  {savedReplay
+                    ? "REPLAY"
+                    : run.mode === "pine"
+                      ? running
+                        ? "LIVE PINE"
+                        : run.status === "succeeded"
+                          ? "VERIFIED PINE"
+                          : "PINE"
+                      : "MANUAL"}
                 </span>
               </div>
               {savedReplay && <RecordedDesk run={run} />}

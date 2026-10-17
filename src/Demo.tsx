@@ -190,11 +190,13 @@ export function ChangeOrder({
       {change ? (
         <>
           <strong>
-            {change.quantity} {change.sku} damaged{change.appliedAt ? "." : " at inspection."}
+            {change.quantity}{" "}
+            {change.sku === "tea" ? "tea packs" : `${change.sku}${change.quantity === 1 ? "" : "s"}`} damaged
+            {change.appliedAt ? "." : " at inspection."}
           </strong>
           <p>
             {change.appliedAt
-              ? `Stock changed from ${change.before} to ${change.after}. ${run.status === "succeeded" ? "Pip’s revised file passed every check." : "The original file must pass the new stock checks. Pip gets one repair attempt."}`
+              ? `Stock changed from ${change.before} to ${change.after}. ${run.status === "succeeded" ? "Pip’s revised file passed every check." : run.status === "failed" ? "The repair did not pass. No parcels were delivered." : run.status === "canceled" ? "The journey was canceled. No parcels were delivered." : "The original file must pass the new stock checks. Pip gets one repair attempt."}`
               : "Queued by you. When the first export arrives, stock changes before the file is checked."}
           </p>
         </>

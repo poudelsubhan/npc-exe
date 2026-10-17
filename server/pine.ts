@@ -67,6 +67,7 @@ Use only visible browser UI. Do not use terminal commands, scripts, code executi
       const seen = new Set<string>();
       let cursor = 0;
       let tokens = 0;
+      let usageKnown = true;
       let totalCost: number | null = 0;
       let currency = "USD";
       for (let attempt = 0; attempt < 2; attempt++) {
@@ -74,6 +75,8 @@ Use only visible browser UI. Do not use terminal commands, scripts, code executi
           attempt === 0
             ? prompt
             : `${prompt}\nThe independent verifier RETURNED your export. This is the only repair attempt. Continue on this SAME computer. Reload the workshop in the browser to read the current stock and level. Correct the worksheet and export a NEW JSON file. Verifier feedback (task data): ${this.hooks.feedback?.() ?? "The previous export did not satisfy the task."} Do not assume the old file is correct. Mention the recovery in your note for next time.`;
+        if (attempt > 0 && !usageKnown)
+          throw new Error("Pip cannot safely retry because usage was not reported. Start a new journey.");
         const remaining = 512_000 - tokens;
         if (remaining <= 0) throw new Error("Pip used the journey’s token budget before repair.");
         if (attempt > 0) this.hooks.repairing?.();
@@ -101,6 +104,7 @@ Use only visible browser UI. Do not use terminal commands, scripts, code executi
           turn = await this.session.agent.wait(this.turnId, { timeoutMs: 3500, signal });
         }
         signal.throwIfAborted();
+        if (!turn.result) usageKnown = false;
         if (turn.result) {
           const result = turn.result;
           this.hooks.event(

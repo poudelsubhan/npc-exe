@@ -28,6 +28,10 @@ Manual rehearsal works without a Pine key or tunnel: open the workshop, draw, ex
 
 ## Play
 
+- **Present** foregrounds the village, objective and real computer.
+- During a depot run, **Damage 2 at inspection** queues a real stock change. The first exported manifest is checked against the changed stock; Pip gets one repair turn on the same computer. Click either animated export to inspect its exact bytes and verifier result.
+- **Replay a journey** plays saved events and artifacts from a verified Pine run. It is always labeled, requires no Pine credits, survives restart, and does not include browser video. **Retry this exact level** prepares another live attempt instead.
+
 - Enter a seed to create a reproducible world. Choose Crossing or Delivery depot and one of three difficulty tiers.
 - **Give Pip a computer** starts a real Pine browser. Artifacts must pass independent checks before they affect the game.
 - **Let the Director choose** selects the next level from verified live results. Manual work remains labeled and does not establish mastery.
@@ -48,7 +52,7 @@ npm run check
 npm audit --omit=dev
 ```
 
-The default suite is offline: domain edge cases, lifecycle, mocked Pine failure/cleanup cases, and real local HTTP boundary checks. It never calls Pine. Live play is explicitly triggered from the UI and uses credits. Runtime is ephemeral, one computer at a time, with a 120-second idle lease, a four-minute agent wall limit, a six-minute outer deadline and cleanup in `finally`. The token allowance includes Pine’s large repeated/cached context; a very small cap can end a run before the first edit. Exact provider usage appears in the activity log when available.
+The default suite is offline: domain edge cases, lifecycle, mocked Pine failure/cleanup cases, and real local HTTP boundary checks. It never calls Pine. Live play is explicitly triggered from the UI and uses credits. Runtime is ephemeral, one computer at a time, with a 120-second idle lease, at most two agent turns (one repair), a four-minute per-turn wall limit, a shared 512K token budget, a six-minute outer deadline and cleanup in `finally`. The token allowance includes Pine’s large repeated/cached context; a very small cap can end a run before the first edit. Exact provider usage appears in the activity log when available.
 
 ## Files and recovery
 
@@ -57,10 +61,10 @@ The default suite is offline: domain edge cases, lifecycle, mocked Pine failure/
 - `server/`: two HTTP listeners, run lifecycle and official Pine SDK adapter.
 - `data/bridge-<run>.json` or `data/dispatch-<run>.json`: exact verified download.
 - `data/profile.json`: private, atomically replaced campaign and last 200 journey entries.
-- `data/receipt-<run>.json`: journey record, checks, fingerprint and provider activity.
+- `data/receipt-<run>.json`: journey record, checks, fingerprint, exact rejected/accepted export text, stock change and provider activity. Replay rechecks retained file hashes and independent rules.
 - `tests/`: no-cost default verification.
 
-The campaign and journal persist in `data/profile.json`. Active execution stays in memory and is not resumed after restart. Evidence files remain in `data/`. An interrupted or failed run cannot change the world. Cancel and Retry retain the current challenge. Never tunnel port 3210: only port 3211 is designed for public reachability. The project is a single-owner local demo, not a hosted multiplayer service.
+The campaign and journal persist in `data/profile.json`. Active execution stays in memory and is not resumed after restart. Evidence files remain in `data/`. An interrupted or failed run cannot create a bridge or deliver parcels. An explicitly queued depot stock change remains part of the revised challenge even if repair fails. Cancel and Retry retain the current challenge. Never tunnel port 3210: only port 3211 is designed for public reachability. The project is a single-owner local demo, not a hosted multiplayer service.
 
 ## Dependencies
 

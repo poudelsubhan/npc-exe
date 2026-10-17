@@ -37,7 +37,15 @@ beforeEach(() => {
   vi.resetAllMocks();
   fake.stop.mockResolvedValue(true);
   fake.artifacts.mockResolvedValue([]);
-  fake.run.mockResolvedValue({ turnId: "turn", state: "completed" });
+  fake.run.mockResolvedValue({
+    turnId: "turn",
+    state: "completed",
+    result: {
+      terminalReason: "completed",
+      summary: "Synthetic export",
+      usage: { llm: { totalTokens: 0 }, cost: { total: 0, currency: "USD" } },
+    },
+  });
   fake.create.mockResolvedValue({
     id: "test-computer",
     requireAgentProtocol: vi.fn(),
@@ -144,5 +152,18 @@ it("stops after a rejected repair and releases its single computer", async () =>
     new PineJourney(config, observers).run("test-run", "https://example.invalid/workshop"),
   ).rejects.toThrow(/did not pass/);
   expect(fake.run).toHaveBeenCalledTimes(2);
+  expect(fake.stop).toHaveBeenCalledTimes(1);
+});
+
+it("does not retry without usage evidence for the shared budget", async () => {
+  fake.run.mockResolvedValue({ turnId: "turn", state: "completed" });
+  fake.artifacts.mockResolvedValue([{ id: "first", filename: "dispatch.json", size: 2 }]);
+  fake.read.mockResolvedValue(Buffer.from("{}"));
+  const observers = hooks();
+  observers.artifact.mockResolvedValue(false);
+  await expect(
+    new PineJourney(config, observers).run("test-run", "https://example.invalid/workshop"),
+  ).rejects.toThrow(/usage was not reported/);
+  expect(fake.run).toHaveBeenCalledTimes(1);
   expect(fake.stop).toHaveBeenCalledTimes(1);
 });

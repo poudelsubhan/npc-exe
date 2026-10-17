@@ -83,3 +83,10 @@ it("rejects stale, excessive and post-inspection changes", async () => {
   await game.import(Buffer.from("{}"), "bad.json");
   expect(() => game.queueChange({ runId: run.id, sku: "blanket", quantity: 2 })).toThrow(/Inspection/);
 });
+
+it("retains exact rejected bytes even with a UTF-8 byte-order mark", async () => {
+  game.start("manual");
+  const bytes = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), exportCurrent()]);
+  expect(await game.import(bytes, "bom.json")).toBe(false);
+  expect(Buffer.from(game.run?.attempts[0]?.text ?? "")).toEqual(bytes);
+});

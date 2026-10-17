@@ -2792,8 +2792,8 @@ select:focus-visible {
 }
 .theater .world {
   flex: none;
-  height: clamp(245px, 23vw, 350px);
-  min-height: 245px;
+  height: clamp(225px, 17vw, 285px);
+  min-height: 225px;
 }
 .theater .chapter {
   padding-top: 0;
@@ -2810,4 +2810,15 @@ select:focus-visible {
     height: 230px;
     min-height: 230px;
   }
+}
+
+.theater .artifact-handoff {
+  margin-top: 0;
+  padding: 10px 14px;
+}
+.theater .handoff-route {
+  margin: 12px 0 10px;
+}
+.theater .world-bottom {
+  margin-top: 10px;
 }
