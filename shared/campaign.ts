@@ -175,7 +175,8 @@ export function chooseNext(level: Level, entries: JournalEntry[]) {
   return {
     mission: level.mission === "bridge" ? ("depot" as const) : ("bridge" as const),
     tier: 1,
-    reason: "Three difficulty tiers explored. Carry the habit of checking real files into a different task.",
+    reason:
+      "A verified solution at the hardest tier. Carry the habit of checking real files into a different task.",
   };
 }
 export function recall(entries: JournalEntry[], level: Level, enabled: boolean): JournalEntry[] {

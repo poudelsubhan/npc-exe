@@ -2,6 +2,8 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import type { GameState } from "../shared/contracts";
 import { type Cell, defaultScene, key, type Scene } from "../shared/domain";
 import { action, readState } from "./api";
+import { CampaignBar, Director, Journal } from "./Campaign";
+import { DepotWorld } from "./DepotWorld";
 import { Pip, World } from "./World";
 
 const Desktop = lazy(() => import("./Desktop"));
@@ -18,6 +20,9 @@ export function App() {
   const [arrived, setArrived] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showJournal, setShowJournal] = useState(false);
+  const generation = useRef(0);
+  const mutating = useRef(false);
   const [wide, setWide] = useState(false);
   const importInput = useRef<HTMLInputElement>(null);
   const helpDialog = useRef<HTMLDialogElement>(null);
@@ -30,11 +35,12 @@ export function App() {
     let alive = true;
     let inFlight = false;
     async function poll() {
-      if (inFlight) return;
+      if (inFlight || mutating.current) return;
+      const observedGeneration = generation.current;
       inFlight = true;
       try {
         const next = await readState();
-        if (alive) {
+        if (alive && generation.current === observedGeneration) {
           setState(next);
           setConnectionError("");
         }
@@ -55,21 +61,34 @@ export function App() {
     };
   }, []);
   async function act(path: string, data: unknown) {
+    generation.current++;
+    mutating.current = true;
     setPending(true);
     setError("");
     try {
       const next = await action(path, data);
       setState(next);
+      if (
+        path === "/api/campaign" &&
+        !(typeof data === "object" && data && "action" in data && data.action === "memory")
+      ) {
+        setEditing(false);
+        setArrived(false);
+        setShowReceipt(false);
+      }
       return true;
     } catch (error) {
       setError(error instanceof Error ? error.message : "Please try again.");
       return false;
     } finally {
+      mutating.current = false;
+      generation.current++;
       setPending(false);
     }
   }
   const scene = editing ? draft : state?.scene || defaultScene();
   const run = state?.run || null;
+  const depot = state?.campaign.level.mission === "depot";
   const running = isRunning(state);
   const cleanupPending = run?.cleanup === "pending" && !running;
   const disabled = pending || running || !!cleanupPending || !state;
@@ -82,7 +101,7 @@ export function App() {
     await act("/api/run", { mode });
   }
   async function applyChallenge() {
-    if (await act("/api/challenge", { rocks: draft.rocks, color: draft.color })) {
+    if (await act("/api/challenge", { rocks: draft.rocks, color: draft.color, inkBudget: draft.inkBudget })) {
       setEditing(false);
       setArrived(false);
     }
@@ -123,7 +142,7 @@ export function App() {
             NPC<span>.exe</span>
           </strong>
           <span className="brand-divider" />
-          <span className="edition">A WAY HOME</span>
+          <span className="edition">THE LITTLE LIGHT CHRONICLES</span>
         </a>
         <nav aria-label="Game controls">
           <span className="connection-pill">
@@ -149,32 +168,56 @@ export function App() {
           </button>
         </nav>
       </header>
+      {state && (
+        <CampaignBar state={state} disabled={disabled} act={act} openJournal={() => setShowJournal(true)} />
+      )}
       <main className="game-layout">
         <section className="world-panel" aria-label="Pip’s world">
           <div className="chapter">
-            <span className="eyebrow">A SMALL EXPERIMENT IN AGENCY</span>
-            <h1>{arrivedHome ? "A little more possible." : "He wasn’t programmed\nto get home."}</h1>
+            <span className="eyebrow">
+              {depot ? "LITTLE LIGHT / THE EVENING POST" : "A SMALL WORLD. A GROWING POSSIBILITY."}
+            </span>
+            <h1>
+              {arrivedHome
+                ? depot
+                  ? "A town a little brighter."
+                  : "A little more possible."
+                : depot
+                  ? "Every window\nis waiting for him."
+                  : "He wasn’t programmed\nto get home."}
+            </h1>
             <p>
               {arrivedHome
-                ? "One real file. One new possibility in his world."
-                : "So you gave him a computer."}
+                ? "One real file. One lesson to carry forward."
+                : depot
+                  ? "A stack of orders. A little stock. A real computer."
+                  : "So you gave him a computer. And a way to remember."}
             </p>
           </div>
           <div className="world-topline">
             <span className="world-live">
               <i />
-              WORLD 001
+              {state?.campaign.level.title.toUpperCase() ?? "WORLD 001"}
             </span>
             <span>REV {String(scene.revision).padStart(2, "0")}</span>
           </div>
-          <World
-            key={run?.id || "waiting"}
-            scene={scene}
-            run={run}
-            editing={editing}
-            onRock={toggleRock}
-            onArrive={arrive}
-          />
+          {depot && state ? (
+            <DepotWorld
+              key={run?.id || state.campaign.level.id}
+              level={state.campaign.level}
+              run={run}
+              onArrive={arrive}
+            />
+          ) : (
+            <World
+              key={run?.id || "waiting"}
+              scene={scene}
+              run={run}
+              editing={editing}
+              onRock={toggleRock}
+              onArrive={arrive}
+            />
+          )}
           <div className="world-bottom">
             <div className="character-card">
               <Pip small />
@@ -186,88 +229,105 @@ export function App() {
                   {editing
                     ? "“You decide what gets in the way.”"
                     : arrivedHome
-                      ? "“I made this. And it brought me home.”"
+                      ? depot
+                        ? "“Every parcel mattered. Even the ones that had to wait.”"
+                        : "“I’ll remember how I found my way.”"
                       : running
-                        ? "“If I can draw it there… maybe I can use it here.”"
-                        : "“There’s no bridge in my list of moves.”"}
+                        ? depot
+                          ? "“Count once. Check the stock. Don’t leave anyone out.”"
+                          : "“If I can draw it there… maybe I can use it here.”"
+                        : depot
+                          ? "“They’re counting on the evening post.”"
+                          : "“There’s no bridge in my list of moves.”"}
                 </p>
               </div>
             </div>
             <div className="world-stats">
               <span>
-                <b>{scene.rocks.length}</b> rocks
+                <b>{depot ? state?.campaign.level.depot?.orders.length : scene.rocks.length}</b>{" "}
+                {depot ? "order rows" : "rocks"}
               </span>
               <span>
-                <b>12</b> tiles of ink
+                <b>{depot ? state?.campaign.level.tier : (scene.inkBudget ?? 12)}</b>{" "}
+                {depot ? "difficulty" : "tiles of ink"}
               </span>
             </div>
           </div>
-          <div className="challenge-bar">
-            {editing ? (
-              <>
-                <span>{draft.rocks.length} / 14 rocks · Keep a route possible</span>
-                <fieldset className="color-picker" aria-label="Bridge color">
-                  {(["amber", "mint", "rose"] as const).map((color) => (
-                    <button
-                      type="button"
-                      key={color}
-                      className={`swatch ${color} ${draft.color === color ? "selected" : ""}`}
-                      aria-label={`${color} bridge`}
-                      aria-pressed={draft.color === color}
-                      onClick={() => setDraft({ ...draft, color })}
-                    />
-                  ))}
-                </fieldset>
-                <button
-                  type="button"
-                  className="text-button"
-                  disabled={pending}
-                  onClick={() => setEditing(false)}
-                >
-                  Discard
-                </button>
-                <button
-                  type="button"
-                  className="small-primary"
-                  disabled={pending}
-                  onClick={() => void applyChallenge()}
-                >
-                  Save world
-                </button>
-              </>
-            ) : (
-              <>
-                <div>
-                  <span className="tiny-symbol">✦</span>
-                  <span>
-                    {successful
-                      ? "Now change the problem. Let him try again."
-                      : "The world is yours to change."}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="secondary small"
-                  disabled={disabled}
-                  onClick={() => {
-                    setDraft(state?.scene || defaultScene());
-                    setEditing(true);
-                  }}
-                >
-                  Place a rock <span>↗</span>
-                </button>
-              </>
-            )}
-          </div>
+          {!depot && (
+            <div className="challenge-bar">
+              {editing ? (
+                <>
+                  <span>{draft.rocks.length} / 14 rocks · Keep a route possible</span>
+                  <fieldset className="color-picker" aria-label="Bridge color">
+                    {(["amber", "mint", "rose"] as const).map((color) => (
+                      <button
+                        type="button"
+                        key={color}
+                        className={`swatch ${color} ${draft.color === color ? "selected" : ""}`}
+                        aria-label={`${color} bridge`}
+                        aria-pressed={draft.color === color}
+                        onClick={() => setDraft({ ...draft, color })}
+                      />
+                    ))}
+                  </fieldset>
+                  <button
+                    type="button"
+                    className="text-button"
+                    disabled={pending}
+                    onClick={() => setEditing(false)}
+                  >
+                    Discard
+                  </button>
+                  <button
+                    type="button"
+                    className="small-primary"
+                    disabled={pending}
+                    onClick={() => void applyChallenge()}
+                  >
+                    Save world
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <span className="tiny-symbol">✦</span>
+                    <span>
+                      {successful
+                        ? "Now change the problem. Let him try again."
+                        : "The world is yours to change."}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="secondary small"
+                    disabled={disabled}
+                    onClick={() => {
+                      setDraft(state?.scene || defaultScene());
+                      setEditing(true);
+                    }}
+                  >
+                    Place a rock <span>↗</span>
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </section>
         <aside className="journey-panel">
           <div className="journey-heading">
             <div>
               <span className="eyebrow">BEYOND THE SCRIPT</span>
-              <h2>{arrivedHome ? "He found a way." : "Give him a way out."}</h2>
+              <h2>
+                {arrivedHome
+                  ? "He has a story to keep."
+                  : depot
+                    ? "The evening shift begins."
+                    : "Give him a way out."}
+              </h2>
             </div>
             <span className="journey-number">01—03</span>
           </div>
+          {state && <Director state={state} disabled={disabled || editing} act={act} />}
           <p className="journey-intro">
             A character leaves his game, uses real software, and brings back something his world can use.
           </p>
@@ -284,8 +344,12 @@ export function App() {
                     {
                       [
                         "A real Pine computer, just for Pip.",
-                        "Draw a bridge in a browser workshop.",
-                        "Verify the file. Walk on the result.",
+                        depot
+                          ? "Reconcile orders in a real dispatch app."
+                          : "Draw a bridge in a browser workshop.",
+                        depot
+                          ? "Verify the manifest. Deliver the parcels."
+                          : "Verify the file. Walk on the result.",
                       ][i]
                     }
                   </small>
@@ -298,9 +362,13 @@ export function App() {
               <div className="permission-note">
                 <span>↗</span>
                 <p>
-                  You’re giving Pip a blank workshop and one goal.
+                  {depot
+                    ? "You’re giving Pip a dispatch desk and a town to serve."
+                    : "You’re giving Pip a blank workshop and one goal."}
                   <br />
-                  <strong>The route is his to figure out.</strong>
+                  <strong>
+                    {depot ? "The accounting is his to figure out." : "The route is his to figure out."}
+                  </strong>
                 </p>
               </div>
               <button
@@ -371,7 +439,11 @@ export function App() {
                         preparing: "Opening Pip’s computer",
                         working: "Pip is in the workshop",
                         verifying: "Checking the real file",
-                        succeeded: arrivedHome ? "Delivery complete" : "A bridge enters the world",
+                        succeeded: arrivedHome
+                          ? "Delivery complete"
+                          : depot
+                            ? "The evening post is on its way"
+                            : "A bridge enters the world",
                         failed: "The journey needs another try",
                         canceled: "Paused at the shore",
                       }[run.status]}
@@ -388,7 +460,7 @@ export function App() {
                   <iframe className="manual-workshop" title="Manual bridge workshop" src={run.workshopUrl} />
                   <div className="manual-import">
                     <label className="primary file-button" htmlFor="blueprint-file">
-                      Import blueprint <span>↑</span>
+                      Import file <span>↑</span>
                     </label>
                     <input
                       ref={importInput}
@@ -423,7 +495,11 @@ export function App() {
                   <div className="verified-seal">✓</div>
                   <div>
                     <span className="eyebrow">FILE VERIFIED • WORLD UPDATED</span>
-                    <h3>{run.blueprint?.cells.length} tiles. A way home.</h3>
+                    <h3>
+                      {depot
+                        ? `${run.manifest?.entries.reduce((sum, row) => sum + row.ship, 0)} parcels. A brighter evening.`
+                        : `${run.blueprint?.cells.length} tiles. A way home.`}
+                    </h3>
                     <p>
                       {run.mode === "pine"
                         ? "Built by Pip in a real browser."
@@ -440,7 +516,7 @@ export function App() {
               {showReceipt && run.receipt && (
                 <div className="receipt">
                   <div className="receipt-title">
-                    BLUEPRINT RECEIPT <span>✓ VERIFIED</span>
+                    ARTIFACT RECEIPT <span>✓ VERIFIED</span>
                   </div>
                   <ul>
                     {run.receipt.checks.map((check) => (
@@ -459,7 +535,7 @@ export function App() {
                     <dd className="hash">{run.receipt.sha256}</dd>
                   </dl>
                   <a href="/api/receipt" download className="text-button">
-                    Download receipt + blueprint ↓
+                    Download receipt + artifact ↓
                   </a>
                 </div>
               )}
@@ -514,16 +590,16 @@ export function App() {
               )}
             </div>
           )}
-          {(error || connectionError) && (
+          {(error || connectionError || state?.journalError) && (
             <p className="error-box" role="alert">
-              {error || connectionError}
+              {error || connectionError || state?.journalError}
             </p>
           )}
           <div className="honesty-note">
             <span>THE STORY IS AUTHORED. THE WORK IS REAL.</span>
             <p>
-              Pip’s goal is written. His clicks and bridge are not. A deterministic verifier decides what
-              enters the world.
+              The Director selects challenges. Pip operates the software. Independent checks decide what
+              enters the world. Notes persist; model weights stay unchanged.
             </p>
           </div>
         </aside>
@@ -536,6 +612,7 @@ export function App() {
           MADE WITH PINE COMPUTER <span>↗</span>
         </span>
       </footer>
+      {state && <Journal state={state} open={showJournal} onClose={() => setShowJournal(false)} />}
       <dialog
         ref={helpDialog}
         onCancel={() => setShowHelp(false)}
@@ -553,17 +630,22 @@ export function App() {
         <span className="eyebrow">THE DEMO, IN THREE MINUTES</span>
         <h2 id="help-title">A game that reaches outside itself.</h2>
         <p>
-          Pip needs to cross the water. Give him a computer and watch his real browser. He paints a bridge,
-          downloads a blueprint, and the game checks it before importing it.
+          Choose a seed, send Pip into a real browser, and watch a verified file change his world. His
+          successful field notes persist between journeys. The Director uses results to choose the next
+          challenge.
         </p>
         <ol>
           <li>Send Pip into the workshop. Watch the live view and activity.</li>
           <li>Open the proof after he crosses. It contains the real artifact’s fingerprint.</li>
-          <li>Place a rock on his old route and send him again. Same goal, new problem.</li>
+          <li>
+            Let the Director choose, or visit the delivery depot. Open the journal to inspect lessons and
+            compare the same level with and without memory.
+          </li>
         </ol>
         <p>
-          Manual rehearsal lets you draw and import the file yourself. It is always labeled. The bridge puzzle
-          is deliberately simple; the experiment is a character using software outside its own game.
+          Manual rehearsal lets you draw and import the file yourself. It is always labeled. The depot uses
+          synthetic orders and inventory. This is a reproducible test environment for computer-using agents,
+          not a production logistics service.
         </p>
         <button type="button" className="primary" onClick={() => setShowHelp(false)}>
           Back to Pip

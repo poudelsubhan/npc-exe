@@ -18,7 +18,10 @@ let workshop: Server;
 let base = "";
 let publicBase = "";
 async function listen(server: Server) {
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
   const address = server.address();
   if (!address || typeof address === "string") throw new Error("No test address");
   return address.port;
@@ -38,7 +41,7 @@ afterAll(async () => {
 });
 describe("public workshop and local owner separation", () => {
   it("never exposes owner routes on the tunneled listener", async () => {
-    for (const route of ["/api/state", "/api/run", "/api/desktop", "/api/receipt", "/"]) {
+    for (const route of ["/api/state", "/api/run", "/api/desktop", "/api/receipt", "/api/campaign", "/"]) {
       expect((await fetch(`${publicBase}${route}`)).status).toBe(404);
     }
     expect(

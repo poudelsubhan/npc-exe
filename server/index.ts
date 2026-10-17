@@ -5,6 +5,7 @@ import { handler } from "./http";
 
 const config = configuration();
 const game = new Game();
+await game.initialize();
 const owner = createServer(handler(false, game, config));
 const workshop = createServer(handler(true, game, config));
 for (const server of [owner, workshop]) {

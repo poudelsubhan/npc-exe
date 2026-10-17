@@ -3,6 +3,7 @@ import { stat } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, resolve, sep } from "node:path";
 import { z } from "zod";
+import { CampaignCommandSchema } from "../shared/campaign";
 import { ChallengeSchema } from "../shared/contracts";
 import type { Configuration } from "./config";
 import type { Game } from "./game";
@@ -103,7 +104,12 @@ export function handler(publicWorkshop: boolean, game: Game, config: Configurati
           return;
         }
         if (req.method === "POST" && url.pathname === "/api/challenge") {
-          game.changeScene(ChallengeSchema.parse(JSON.parse((await body(req)).toString())));
+          await game.changeScene(ChallengeSchema.parse(JSON.parse((await body(req)).toString())));
+          json(res, game.state());
+          return;
+        }
+        if (req.method === "POST" && url.pathname === "/api/campaign") {
+          await game.campaign(CampaignCommandSchema.parse(JSON.parse((await body(req)).toString())));
           json(res, game.state());
           return;
         }
@@ -136,7 +142,12 @@ export function handler(publicWorkshop: boolean, game: Game, config: Configurati
         }
         if (req.method === "GET" && url.pathname === "/api/receipt" && game.run?.receipt) {
           res.setHeader("Content-Disposition", 'attachment; filename="npc-receipt.json"');
-          json(res, { receipt: game.run.receipt, blueprint: game.run.blueprint });
+          json(res, {
+            receipt: game.run.receipt,
+            blueprint: game.run.blueprint,
+            manifest: game.run.manifest,
+            level: game.run.level,
+          });
           return;
         }
         json(res, { error: "Not found" }, 404);

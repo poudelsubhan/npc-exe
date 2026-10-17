@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { BlueprintSchema, CellSchema, SceneSchema } from "./domain";
+import { CampaignSchema, JournalEntrySchema, LevelSchema, MetricsSchema } from "./campaign";
+import { ManifestSchema } from "./depot";
+import { WorkshopSchema as BaseWorkshopSchema, BlueprintSchema, CellSchema, SceneSchema } from "./domain";
 export const StatusSchema = z.enum(["preparing", "working", "verifying", "succeeded", "failed", "canceled"]);
 export const EventSchema = z.object({
   at: z.string(),
@@ -17,6 +19,12 @@ export const ReceiptSchema = z.object({
 });
 export const RunSchema = z.object({
   id: z.string(),
+  level: LevelSchema.nullable().default(null),
+  manifest: ManifestSchema.nullable().default(null),
+  memories: z.array(JournalEntrySchema).default([]),
+  memoryEnabled: z.boolean().default(true),
+  rejections: z.number().int().nonnegative().default(0),
+  usage: MetricsSchema.nullable().default(null),
   mode: z.enum(["pine", "manual"]),
   status: StatusSchema,
   startedAt: z.string(),
@@ -31,7 +39,15 @@ export const RunSchema = z.object({
   cleanup: z.enum(["pending", "released", "unconfirmed", "not-needed"]),
   workshopUrl: z.string(),
 });
+export const WorkshopSchema = BaseWorkshopSchema.extend({
+  level: LevelSchema.nullable(),
+  memories: z.array(JournalEntrySchema),
+});
+export type Workshop = z.infer<typeof WorkshopSchema>;
 export const StateSchema = z.object({
+  campaign: CampaignSchema,
+  journal: z.array(JournalEntrySchema),
+  journalError: z.string().nullable(),
   scene: SceneSchema,
   run: RunSchema.nullable(),
   ready: z.object({ pine: z.boolean(), workshop: z.boolean() }),

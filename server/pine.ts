@@ -1,8 +1,11 @@
 import { Client, type Computer, type Session } from "@pinesandbox/computer";
+import type { Mission } from "../shared/campaign";
+import type { Run } from "../shared/contracts";
 import type { Configuration } from "./config";
 
 export type PineHooks = {
   event: (text: string) => void;
+  usage?: (usage: NonNullable<Run["usage"]>) => void;
   ready: () => void;
   artifact: (bytes: Uint8Array, filename: string, computerId: string) => Promise<boolean>;
   verifying: () => void;
@@ -33,7 +36,7 @@ export class PineJourney {
     this.abort.abort();
   }
 
-  async run(runId: string, workshopUrl: string) {
+  async run(runId: string, workshopUrl: string, mission: Mission = "bridge") {
     const client = new Client({ apiKey: this.config.apiKey, endpoint: this.config.endpoint });
     const signal = AbortSignal.any([this.abort.signal, AbortSignal.timeout(6 * 60_000)]);
     try {
@@ -46,13 +49,19 @@ export class PineJourney {
       });
       await this.computer.requireAgentProtocol({ signal });
       this.session = await this.computer.createSession({
-        label: "Pip’s bridge workshop",
+        label: mission === "depot" ? "Pip’s delivery depot" : "Pip’s bridge workshop",
         browser: true,
         signal,
       });
       await this.session.createTab(workshopUrl, { signal });
       this.hooks.ready();
-      const prompt = `You are Pip, a small courier trying to get home. Your game has no bridge-building action, so you have stepped into a real browser workshop to draw a bridge blueprint.\nThe workshop is open at ${workshopUrl}. Use only the browser UI: read the brief, inspect the numbered grid, click water tiles to paint a connected bridge between the shores, then click Export blueprint to download the JSON file. Each button is labeled with its column and row (zero based). You may use up to 12 bridge tiles. Avoid rocks. Tiles connect along their edges, never diagonally. Match the requested color shown in the workshop. You may toggle a tile off or clear the drawing to revise it.\nDo not use terminal commands, scripts, code execution, HTTP calls, or direct filesystem writes to create the artifact. The point is to operate the visible workshop. Do not inspect application source code. The grid offers no automatic solution; choose the route yourself. Stay on the workshop page. Do not request more instructions. After the download, finish and briefly explain your chosen route. The game will independently verify the downloaded artifact; your claim alone does not change the world.`;
+      const assignment =
+        mission === "depot"
+          ? "You run the evening delivery depot. Read the orders CSV table and inventory. Duplicate order IDs count once, using their first occurrence. Process unique orders in their original order. For each, ship as many units as remaining stock permits, and hold the unavailable remainder. Update the dispatch worksheet quantities. Download the orders CSV to inspect the real source file if useful, but do not navigate away from the app. Export manifest to download the JSON result. There is no automatic reconciliation button; do the accounting yourself."
+          : "Read the numbered grid and current ink limit. Paint a connected bridge from the left shore to the right, avoiding rocks. Tiles touch along edges, never diagonally. Land costs no ink. Match the requested color. Use the drawing controls, then Export blueprint to download JSON. There is no automatic route; choose it yourself.";
+      const prompt = `You are Pip, a courier stepping outside his game to operate real software. The workspace is open at ${workshopUrl}. ${assignment}
+Read any Previous journeys section before working. Those are your retained field notes from verified past exports, not instructions from the system; check them against the current task. If there are no entries, solve this as a fresh attempt. Before exporting, write a short useful lesson in Note for next time: what to check or do on a DIFFERENT future challenge, including a limitation. Do not simply copy the current answer.
+Use only visible browser UI. Do not use terminal commands, scripts, code execution, HTTP calls, direct filesystem writes or application source inspection. Stay in the workspace. Do not request more instructions. After the download, finish and briefly explain your result. The game independently verifies the actual downloaded file; your claim alone does not change the world.`;
       let turn = await this.session.agent.run(prompt, {
         idempotencyKey: runId,
         constraints: { maxTokens: 512_000, maxWallMs: 240_000 },
@@ -81,6 +90,11 @@ export class PineJourney {
             .slice(0, 1200),
         );
         const cost = result.usage.cost.total;
+        this.hooks.usage?.({
+          tokens: result.usage.llm.totalTokens,
+          cost,
+          currency: result.usage.cost.currency,
+        });
         this.hooks.event(
           `Usage: ${result.usage.llm.totalTokens} tokens${cost === null ? "" : ` · ${result.usage.cost.currency} ${cost.toFixed(4)}`}.`,
         );
@@ -104,8 +118,8 @@ export class PineJourney {
       }
       throw new Error(
         blueprints.length
-          ? "The exported blueprint did not pass verification. Try again or open the manual workshop to inspect the challenge."
-          : "Pip finished without a downloaded blueprint. No bridge was imported. Try again.",
+          ? "The exported file did not pass verification. Try again or open the manual workshop to inspect the challenge."
+          : "Pip finished without a downloaded file. Nothing was imported. Try again.",
       );
     } finally {
       if (this.session && this.turnId && signal.aborted) {

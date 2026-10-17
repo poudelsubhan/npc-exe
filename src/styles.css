@@ -1621,3 +1621,661 @@ fieldset.color-picker {
   display: block;
   margin-top: 14px;
 }
+/* Campaign: a field guide wrapped around a living diorama. */
+.campaign-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.campaign-location {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  flex: 1;
+}
+.compass-mark {
+  color: var(--amber);
+  font-size: 35px;
+}
+.campaign-location .eyebrow {
+  font-size: 8px;
+  letter-spacing: 1.7px;
+  display: block;
+  margin-bottom: 5px;
+}
+.campaign-location strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.campaign-location strong span {
+  color: #738d96;
+  margin: 0 7px;
+}
+.seed-form {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ffffff1c;
+  background: #182330;
+  border-radius: 7px;
+  padding: 8px 10px;
+  gap: 9px;
+}
+.seed-form label {
+  font:
+    8px "IBM Plex Mono",
+    monospace;
+  color: #a3b7ba;
+  letter-spacing: 1px;
+}
+.seed-form input {
+  width: 115px;
+  background: none;
+  border: 0;
+  color: #ead7ad;
+  font:
+    11px "IBM Plex Mono",
+    monospace;
+}
+.seed-form button {
+  background: none;
+  color: var(--amber);
+  font-size: 21px;
+  padding: 0 4px;
+}
+.journal-button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 15px;
+  border-radius: 7px;
+  border: 1px solid #b8c5a532;
+  background: #a0b88d0a;
+  color: #c7d4b8;
+  font-size: 11px;
+}
+.journal-button span {
+  border-radius: 50%;
+  background: #b5c7a51c;
+  min-width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+}
+.director-card {
+  border: 1px solid #9bbdbd26;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #20364180, #1a253840);
+  padding: 17px;
+  margin-top: 18px;
+}
+.director-heading {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.director-eye {
+  color: #a1d0c7;
+  font-size: 27px;
+}
+.director-heading .eyebrow {
+  display: block;
+  color: #a0c0bc;
+  font-size: 8px;
+  margin-bottom: 5px;
+  letter-spacing: 1.5px;
+}
+.director-heading strong {
+  font:
+    19px "DM Serif Display",
+    Georgia,
+    serif;
+  font-weight: 400;
+}
+.difficulty {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+.difficulty i {
+  height: 15px;
+  width: 4px;
+  background: #ffffff1c;
+  border-radius: 3px;
+}
+.difficulty i.filled {
+  background: #a8c6ae;
+}
+.director-card p {
+  font-size: 11px;
+  color: #b3c2c2;
+  line-height: 1.65;
+  margin: 13px 0;
+}
+.director-twist {
+  color: #e7cd9f;
+  font-size: 10px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid #ffffff12;
+}
+.mission-choices {
+  display: flex;
+  gap: 6px;
+  margin-top: 13px;
+}
+.mission-choices button {
+  flex: 1;
+  background: #ffffff05;
+  border: 1px solid #ffffff16;
+  color: #a7b8be;
+  border-radius: 5px;
+  padding: 9px 5px;
+  font-size: 10px;
+}
+.mission-choices button[aria-pressed="true"] {
+  color: #f0d6a9;
+  border-color: #e5bd7555;
+  background: #e8c78e0c;
+}
+.director-controls {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  margin-top: 13px;
+}
+.director-controls > label {
+  font-size: 9px;
+  color: #a3b7bb;
+}
+.director-controls select {
+  display: block;
+  margin-top: 5px;
+  background: #1a2c36;
+  border: 1px solid #ffffff24;
+  border-radius: 4px;
+  color: #d8e1da;
+  padding: 6px;
+  font:
+    10px "DM Sans",
+    sans-serif;
+}
+.memory-switch {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+}
+.memory-switch input {
+  accent-color: var(--mint);
+  width: 16px;
+  height: 16px;
+}
+.memory-switch span {
+  color: #e0dcc9;
+  font-size: 10px;
+}
+.memory-switch small {
+  display: block;
+  font-size: 8px;
+  color: #9caeb3;
+  margin-top: 5px;
+}
+.director-next {
+  border-top: 1px solid #ffffff13;
+  margin-top: 13px;
+}
+.director-next .primary {
+  width: 100%;
+  font-size: 11px;
+  padding: 12px;
+}
+.director-next .text-button {
+  display: block;
+  margin: 8px auto 0;
+}
+.journal-dialog {
+  background: #ede5d1;
+  color: #354a47;
+  border: 1px solid #fff7dc;
+  border-radius: 12px;
+  width: min(790px, calc(100% - 30px));
+  max-height: 88vh;
+  padding: 34px;
+  box-shadow: 0 35px 100px #0008;
+}
+.journal-dialog::backdrop {
+  background: #080f1dcc;
+  backdrop-filter: blur(8px);
+}
+.journal-dialog .eyebrow {
+  color: #6b7e65;
+  font-size: 9px;
+}
+.journal-dialog .icon-button {
+  color: #405b50;
+}
+.journal-dialog h2 {
+  font:
+    36px "DM Serif Display",
+    Georgia,
+    serif;
+  margin: 14px 0;
+  font-weight: 400;
+}
+.journal-intro {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #62726a;
+  max-width: 630px;
+}
+.journal-tabs {
+  display: flex;
+  border-bottom: 1px solid #637c6530;
+  gap: 20px;
+  margin: 24px 0 20px;
+}
+.journal-tabs button {
+  background: none;
+  color: #6a7a6c;
+  font-size: 11px;
+  padding: 0 0 12px;
+  border-bottom: 2px solid transparent;
+}
+.journal-tabs button[aria-pressed="true"] {
+  color: #334f3a;
+  border-bottom-color: #66815c;
+}
+.journal-entry {
+  border: 1px solid #758b6d30;
+  border-left: 3px solid #9baf83;
+  border-radius: 5px;
+  background: #fffdf736;
+  padding: 18px;
+  margin-bottom: 13px;
+}
+.journal-entry.failed,
+.journal-entry.canceled {
+  border-left-color: #bf9b7a;
+}
+.entry-meta,
+.entry-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  font:
+    8px "IBM Plex Mono",
+    monospace;
+  color: #667b69;
+  flex-wrap: wrap;
+}
+.journal-entry h3 {
+  font:
+    23px "DM Serif Display",
+    Georgia,
+    serif;
+  margin: 10px 0;
+}
+.journal-entry h3 small {
+  font:
+    9px "DM Sans",
+    sans-serif;
+  color: #77836f;
+  margin-left: 9px;
+}
+.journal-entry p {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.journal-entry code {
+  display: block;
+  font-size: 8px;
+  color: #687a6b;
+  margin-top: 10px;
+  overflow-wrap: anywhere;
+}
+.journal-dialog footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px dashed #526c6333;
+  margin-top: 24px;
+  padding-top: 15px;
+  align-items: center;
+}
+.journal-dialog footer span {
+  font-size: 9px;
+  color: #748471;
+}
+.journal-dialog .text-button {
+  color: #456642;
+}
+.journal-empty {
+  text-align: center;
+  padding: 38px 20px;
+  color: #6b7c67;
+}
+.journal-empty > span {
+  font-size: 44px;
+}
+.journal-empty h3 {
+  font:
+    25px "DM Serif Display",
+    Georgia,
+    serif;
+}
+.journal-empty p {
+  font-size: 12px;
+  line-height: 1.7;
+}
+.comparison p {
+  font-size: 12px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.comparison small {
+  display: block;
+  font-size: 10px;
+  line-height: 1.7;
+  color: #6a786c;
+}
+.comparison table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+  font-size: 11px;
+}
+.comparison th,
+.comparison td {
+  text-align: left;
+  padding: 12px 7px;
+  border-bottom: 1px solid #576c5f22;
+}
+.comparison td {
+  font-variant-numeric: tabular-nums;
+}
+.field-notes {
+  border: 1px solid #adc3a138;
+  background: #91ae8a0b;
+  border-radius: 5px;
+  padding: 12px 15px;
+  margin: 16px 0;
+  font-size: 12px;
+  color: #c3d0bb;
+}
+.field-notes summary {
+  cursor: pointer;
+}
+.field-notes article {
+  border-top: 1px solid #ffffff15;
+  margin-top: 13px;
+  padding-top: 13px;
+}
+.field-notes p {
+  line-height: 1.7;
+}
+.field-notes small {
+  color: #96aaa2;
+  font-size: 10px;
+}
+.note-label {
+  display: block;
+  font-size: 12px;
+  color: #c9d3c3;
+  margin-top: 20px;
+}
+.note-label textarea {
+  display: block;
+  resize: vertical;
+  width: 100%;
+  min-height: 65px;
+  border: 1px solid #ffffff24;
+  border-radius: 5px;
+  background: #101e2a;
+  color: #e3e8d9;
+  padding: 12px;
+  font:
+    12px / 1.6 "DM Sans",
+    sans-serif;
+  margin-top: 9px;
+}
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+}
+.inventory-shelf {
+  display: flex;
+  gap: 12px;
+  margin: 22px 0;
+}
+.inventory-shelf > div {
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px 13px;
+  background: #21333e;
+  border: 1px solid #b4c5ae26;
+  border-radius: 6px;
+  padding: 15px;
+}
+.inventory-shelf span {
+  grid-row: span 2;
+  font-size: 33px;
+  color: #efd19a;
+  align-self: center;
+}
+.inventory-shelf strong {
+  font-size: 26px;
+  color: #e2ddc9;
+  font-weight: 500;
+}
+.inventory-shelf small {
+  font-size: 10px;
+  color: #adbbb2;
+}
+.depot-paper {
+  background: #eee8d8;
+  color: #3a504c;
+  border-radius: 5px;
+  padding: 20px;
+  margin: 18px 0;
+}
+.depot-paper .paper-top {
+  align-items: center;
+  padding-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.depot-paper .text-button {
+  color: #506e54;
+  font-size: 11px;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+.depot-paper table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+.depot-paper th {
+  text-align: left;
+  font-size: 10px;
+  color: #697c70;
+  font-weight: 500;
+  padding: 10px 7px;
+  border-bottom: 1px solid #566e5333;
+}
+.depot-paper td {
+  padding: 12px 7px;
+  border-bottom: 1px solid #566e531a;
+}
+.depot-paper td small {
+  display: block;
+  margin-top: 5px;
+  font-size: 10px;
+  color: #657b6a;
+}
+.depot-paper input {
+  width: 70px;
+  max-width: 100%;
+  padding: 10px;
+  border: 1px solid #758c6960;
+  border-radius: 4px;
+  background: #fffdf5;
+  color: #314e3b;
+  font-size: 14px;
+}
+.town-house-label {
+  fill: #bdd0c5;
+  font:
+    10px "DM Sans",
+    sans-serif;
+}
+.town-caption {
+  fill: #b7c9bc;
+  font:
+    12px "DM Sans",
+    sans-serif;
+}
+.depot-courier {
+  transition: transform 1.1s ease-in-out;
+}
+@media (min-width: 801px) {
+  .game-layout {
+    height: calc(100vh - 207px);
+    min-height: 610px;
+  }
+  .journey-panel {
+    padding-top: 22px;
+  }
+  .journey-heading {
+    margin-bottom: 0;
+  }
+  .journey-intro {
+    display: none;
+  }
+  .stages {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin: 20px 0;
+  }
+  .stages::before {
+    display: none;
+  }
+  .stages li {
+    flex: 1;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .stages li > span {
+    width: 24px;
+    height: 24px;
+    font-size: 9px;
+  }
+  .stages strong {
+    font-size: 10px;
+  }
+  .stages small {
+    display: none;
+  }
+  .permission-note {
+    display: none;
+  }
+  .honesty-note {
+    margin-top: 18px;
+  }
+}
+@media (max-width: 1000px) {
+  .campaign-bar {
+    gap: 12px;
+  }
+  .campaign-location strong {
+    font-size: 10px;
+  }
+  .seed-form label {
+    display: none;
+  }
+  .campaign-location .eyebrow {
+    font-size: 7px;
+  }
+  .edition {
+    display: none;
+  }
+}
+@media (max-width: 800px) {
+  .campaign-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 0;
+  }
+  .campaign-location {
+    flex-basis: 100%;
+  }
+  .seed-form {
+    flex: 1;
+  }
+  .seed-form input {
+    width: 100%;
+    min-width: 70px;
+  }
+  .campaign-location strong {
+    font-size: 12px;
+  }
+  .seed-form label {
+    display: block;
+    white-space: nowrap;
+  }
+  .journal-button {
+    padding: 8px 11px;
+  }
+  .world-topline {
+    position: static;
+    margin-top: 18px;
+  }
+  .journal-dialog {
+    padding: 25px 19px;
+  }
+  .journal-dialog h2 {
+    font-size: 29px;
+  }
+  .journal-tabs {
+    gap: 12px;
+  }
+  .journal-tabs button {
+    font-size: 10px;
+  }
+  .comparison th,
+  .comparison td {
+    padding: 10px 5px;
+    font-size: 10px;
+  }
+  .inventory-shelf {
+    gap: 6px;
+  }
+  .inventory-shelf > div {
+    padding: 10px;
+    gap: 3px;
+  }
+  .inventory-shelf span {
+    font-size: 23px;
+  }
+  .inventory-shelf strong {
+    font-size: 20px;
+  }
+  .inventory-shelf small {
+    font-size: 8px;
+  }
+  .depot-paper {
+    padding: 12px;
+  }
+  .depot-paper td {
+    font-size: 11px;
+  }
+  .depot-paper input {
+    width: 55px;
+    padding: 8px;
+  }
+}

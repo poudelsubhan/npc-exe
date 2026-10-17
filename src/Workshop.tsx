@@ -1,21 +1,15 @@
 import { useEffect, useState } from "react";
-import {
-  type Blueprint,
-  type Cell,
-  grid,
-  INK_BUDGET,
-  isLand,
-  key,
-  type Workshop as WorkshopData,
-  WorkshopSchema,
-} from "../shared/domain";
+import { type Workshop as WorkshopData, WorkshopSchema } from "../shared/contracts";
+import { type Blueprint, type Cell, grid, INK_BUDGET, isLand, key } from "../shared/domain";
 import { request } from "./api";
+import { DepotWorkshop, FieldNotes } from "./DepotWorkshop";
 import { Pip } from "./World";
 export function Workshop() {
   const [workshop, setWorkshop] = useState<WorkshopData | null>(null);
   const [cells, setCells] = useState<Cell[]>([]);
   const [error, setError] = useState("");
   const [exported, setExported] = useState(false);
+  const [note, setNote] = useState("");
   useEffect(() => {
     const ticket = new URLSearchParams(window.location.search).get("ticket") || "";
     request(`/api/workshop?ticket=${encodeURIComponent(ticket)}`)
@@ -29,14 +23,16 @@ export function Workshop() {
         <output>{error || "Opening the drawing desk…"}</output>
       </main>
     );
+  if (workshop.level?.mission === "depot") return <DepotWorkshop workshop={workshop} />;
+  const budget = workshop.scene.inkBudget ?? INK_BUDGET;
   const rocks = new Set(workshop.scene.rocks.map(key));
   const painted = new Set(cells.map(key));
   function paint(cell: Cell) {
     setExported(false);
     setError("");
     if (painted.has(key(cell))) setCells(cells.filter((c) => key(c) !== key(cell)));
-    else if (cells.length < INK_BUDGET) setCells([...cells, cell]);
-    else setError("All 12 tiles are used. Remove a tile before adding another.");
+    else if (cells.length < budget) setCells([...cells, cell]);
+    else setError(`All ${budget} tiles are used. Remove a tile before adding another.`);
   }
   function download() {
     if (!workshop) return;
@@ -46,6 +42,7 @@ export function Workshop() {
       sceneRevision: workshop.scene.revision,
       color: workshop.scene.color,
       cells,
+      note,
     };
     const blob = new Blob([JSON.stringify(blueprint, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -67,8 +64,9 @@ export function Workshop() {
       </header>
       <p className="workshop-brief">
         Paint a path from the left shore to the right. Connect tiles along their edges, avoid rocks, and use
-        at most <strong>12 tiles</strong>.
+        at most <strong>{budget} tiles</strong>.
       </p>
+      <FieldNotes workshop={workshop} />
       <div className="workshop-meta">
         <span>
           <i className="color-dot" />
@@ -80,7 +78,9 @@ export function Workshop() {
       <div className="drawing-paper">
         <div className="paper-top">
           <span>BRIDGE BLUEPRINT</span>
-          <span>{cells.length} / 12 TILES</span>
+          <span>
+            {cells.length} / {budget} TILES
+          </span>
         </div>
         <div className="blueprint-grid">
           {grid.map((cell) => {
@@ -122,6 +122,15 @@ export function Workshop() {
           <span>HOME →</span>
         </div>
       </div>
+      <label className="note-label">
+        Note for next time
+        <textarea
+          maxLength={600}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="What should future Pip check on a different crossing?"
+        />
+      </label>
       <div className="workshop-actions">
         <button
           type="button"

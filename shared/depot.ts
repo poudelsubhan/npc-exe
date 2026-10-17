@@ -33,6 +33,7 @@ export const ManifestSchema = z
   .object({
     schemaVersion: z.literal(1),
     kind: z.literal("dispatch"),
+    note: z.string().max(600).optional(),
     runId: z.string().uuid(),
     levelId: z.string().max(160),
     entries: z.array(DispatchSchema).min(2).max(8),

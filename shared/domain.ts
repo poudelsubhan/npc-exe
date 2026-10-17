@@ -36,6 +36,7 @@ export const BlueprintSchema = z
     sceneRevision: z.number().int().positive(),
     color: ColorSchema,
     cells: z.array(CellSchema).min(1).max(INK_BUDGET),
+    note: z.string().max(600).optional(),
   })
   .strict();
 export type Blueprint = z.infer<typeof BlueprintSchema>;
