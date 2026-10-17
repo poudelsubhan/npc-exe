@@ -1,6 +1,6 @@
-# NPC.exe — A way home
+# NPC.exe — The Little Light Chronicles
 
-A tiny courier borrows a real computer, draws a bridge in a browser, exports a file, and walks across that exact artifact inside his game.
+Pip borrows a real computer, solves seeded challenges and brings verified files back into his world. A Director adapts the next challenge. Pip’s journal persists. A delivery-depot mission turns real orders CSVs and dispatch manifests into visible consequences.
 
 ## Run
 
@@ -26,18 +26,20 @@ Open **http://localhost:3210**. The tunnel helper uses the installed `cloudflare
 
 Manual rehearsal works without a Pine key or tunnel: open the workshop, draw, export, then import the downloaded JSON file. Manual play is always labeled.
 
-## Demo
+## Play
 
-1. **Give Pip a computer.** The view-only screen is his actual Pine browser. Activity comes from Pine, not a prewritten sequence.
-2. Watch him paint and export. The server retrieves the downloaded artifact and independently checks it. Only a valid file creates a bridge.
-3. **Inspect the proof.** Show the original file’s SHA-256 fingerprint and all six checks.
-4. **Place a rock** on the previous bridge, optionally change its color, save the world, and send Pip again. No solution is supplied to him.
+- Enter a seed to create a reproducible world. Choose Crossing or Delivery depot and one of three difficulty tiers.
+- **Give Pip a computer** starts a real Pine browser. Artifacts must pass independent checks before they affect the game.
+- **Let the Director choose** selects the next level from verified live results. Manual work remains labeled and does not establish mastery.
+- **Pip’s journal** retains field notes, evidence and measurements across restarts. Only verified live notes are recalled for future tasks of the same kind.
+- Toggle **Bring the journal** and replay the same level to compare a fresh trial with one receiving prior notes. Each trial requires an explicit start.
+- Depot difficulty 3 includes duplicate order rows and limited stock. Pip fills a dispatch worksheet; its verified export determines actual shipments and holds in Little Light village.
 
 See [the demo script](docs/demo.md), [system design](docs/system-design.md), and [verification evidence](docs/verification.md).
 
 ## What is real, what is authored
 
-The character, goal, dialogue, world art and walking animation are authored. Pine chooses the route and operates the workshop. The downloaded data determines the bridge and the walkable path. A deterministic verifier, not the model’s claim, decides success. This puzzle could be solved with a conventional pathfinder; the idea is an NPC using software beyond its game, not a new pathfinding algorithm. There is no claim of consciousness or learning across runs.
+Art, dialogue and missions are authored. The Director is deterministic. Pine’s browser actions, exported data, field notes and provider usage are real. Independent rules decide success. Journal memory supplies prior procedures; model weights do not change. A valid artifact proves a task outcome, not the accuracy of every reflection. One comparison pair does not prove improvement. Depot records are synthetic; no production logistics service is connected.
 
 ## Checks
 
@@ -53,14 +55,15 @@ The default suite is offline: domain edge cases, lifecycle, mocked Pine failure/
 - `src/`: game, original SVG world, workshop and live desktop.
 - `shared/`: parsed contracts, puzzle rules and independent verifier.
 - `server/`: two HTTP listeners, run lifecycle and official Pine SDK adapter.
-- `data/bridge-<run>.json`: exact verified download; never rewritten.
+- `data/bridge-<run>.json` or `data/dispatch-<run>.json`: exact verified download.
+- `data/profile.json`: private, atomically replaced campaign and last 200 journey entries.
 - `data/receipt-<run>.json`: journey record, checks, fingerprint and provider activity.
 - `tests/`: no-cost default verification.
 
-The world and active run live in process memory. Restarting resets the world; saved evidence remains in `data/`. An interrupted or failed run does not create a bridge. Cancel and Retry retain the current challenge. Never tunnel port 3210: only port 3211 is designed for public reachability. The project is a single-owner local demo, not a hosted multiplayer service.
+The campaign and journal persist in `data/profile.json`. Active execution stays in memory and is not resumed after restart. Evidence files remain in `data/`. An interrupted or failed run cannot change the world. Cancel and Retry retain the current challenge. Never tunnel port 3210: only port 3211 is designed for public reachability. The project is a single-owner local demo, not a hosted multiplayer service.
 
 ## Dependencies
 
-Pine server SDK 0.3.3 and browser SDK 0.3.7 (Apache-2.0); React, Vite, TypeScript, tsx, Vitest, Zod and Biome (see the dependency notices for all licenses, including MPL-2.0 and CC-BY-4.0 transitive components). `package-lock.json` pins the full dependency graph. React handles the two interactive screens; Zod parses untrusted JSON; the Pine SDK handles lifecycle/transport; Vite builds and lazily loads the live desktop. No database, background queue, agent framework or UI component library is needed.
+Pine server SDK 0.3.3 and browser SDK 0.3.7 (Apache-2.0); React, Vite, TypeScript, tsx, Vitest, Zod and Biome (see the dependency notices for all licenses, including MPL-2.0 and CC-BY-4.0 transitive components). `package-lock.json` pins the full dependency graph. React handles the game, journal and both workspaces; Zod parses untrusted JSON; the Pine SDK handles lifecycle/transport; Vite builds and lazily loads the live desktop. No database, background queue, agent framework or UI component library is needed.
 
 Official integration reference: https://console.pinecomputer.io/docs/integration

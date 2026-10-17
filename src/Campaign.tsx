@@ -63,7 +63,6 @@ export function CampaignBar({
 }
 export function Director({ state, disabled, act }: { state: GameState; disabled: boolean; act: Act }) {
   const level = state.campaign.level;
-  const next = chooseNext(level, state.journal);
   return (
     <section className="director-card" aria-label="The Director">
       <div className="director-heading">
@@ -80,57 +79,69 @@ export function Director({ state, disabled, act }: { state: GameState; disabled:
       </div>
       <p>{state.campaign.reason}</p>
       <div className="director-twist">{level.twist}</div>
-      <div className="mission-choices">
-        {(["bridge", "depot"] as Mission[]).map((mission) => (
-          <button
-            type="button"
-            disabled={disabled}
-            aria-pressed={level.mission === mission}
-            key={mission}
-            onClick={() => void act("/api/campaign", { action: "new", mission, seed: level.seed, tier: 1 })}
-          >
-            {mission === "bridge" ? "01 / Crossing" : "02 / Delivery depot"}
-          </button>
-        ))}
-      </div>
-      <div className="director-controls">
-        <label>
-          Challenge
-          <select
-            aria-label="Challenge difficulty"
-            value={level.tier}
-            disabled={disabled}
-            onChange={(e) =>
-              void act("/api/campaign", {
-                action: "new",
-                seed: level.seed,
-                mission: level.mission,
-                tier: Number(e.target.value),
-              })
-            }
-          >
-            <option value="1">1 · Discover</option>
-            <option value="2">2 · Adapt</option>
-            <option value="3">3 · Combine</option>
-          </select>
-        </label>
-        <label className="memory-switch">
-          <input
-            type="checkbox"
-            checked={state.campaign.memoryEnabled}
-            disabled={disabled}
-            onChange={(e) => void act("/api/campaign", { action: "memory", memoryEnabled: e.target.checked })}
-          />
-          <span>
-            Bring the journal
-            <small>
-              {state.campaign.memoryEnabled
-                ? "Verified past notes travel with Pip"
-                : "Fresh Pip · history withheld"}
-            </small>
-          </span>
-        </label>
-      </div>
+      <details className="director-settings" open={!state.run}>
+        <summary>Challenge &amp; memory settings</summary>
+        <div className="mission-choices">
+          {(["bridge", "depot"] as Mission[]).map((mission) => (
+            <button
+              type="button"
+              disabled={disabled}
+              aria-pressed={level.mission === mission}
+              key={mission}
+              onClick={() => void act("/api/campaign", { action: "new", mission, seed: level.seed, tier: 1 })}
+            >
+              {mission === "bridge" ? "01 / Crossing" : "02 / Delivery depot"}
+            </button>
+          ))}
+        </div>
+        <div className="director-controls">
+          <label>
+            Challenge
+            <select
+              aria-label="Challenge difficulty"
+              value={level.tier}
+              disabled={disabled}
+              onChange={(e) =>
+                void act("/api/campaign", {
+                  action: "new",
+                  seed: level.seed,
+                  mission: level.mission,
+                  tier: Number(e.target.value),
+                })
+              }
+            >
+              <option value="1">1 · Discover</option>
+              <option value="2">2 · Adapt</option>
+              <option value="3">3 · Combine</option>
+            </select>
+          </label>
+          <label className="memory-switch">
+            <input
+              type="checkbox"
+              checked={state.campaign.memoryEnabled}
+              disabled={disabled}
+              onChange={(e) =>
+                void act("/api/campaign", { action: "memory", memoryEnabled: e.target.checked })
+              }
+            />
+            <span>
+              Bring the journal
+              <small>
+                {state.campaign.memoryEnabled
+                  ? "Verified past notes travel with Pip"
+                  : "Fresh Pip · history withheld"}
+              </small>
+            </span>
+          </label>
+        </div>
+      </details>
+    </section>
+  );
+}
+export function NextChapter({ state, disabled, act }: { state: GameState; disabled: boolean; act: Act }) {
+  const next = chooseNext(state.campaign.level, state.journal);
+  return (
+    <>
       {state.run && !["preparing", "working", "verifying"].includes(state.run.status) && (
         <div className="director-next">
           <p>
@@ -154,7 +165,7 @@ export function Director({ state, disabled, act }: { state: GameState; disabled:
           </button>
         </div>
       )}
-    </section>
+    </>
   );
 }
 const duration = (entry: JournalEntry) => `${(entry.durationMs / 1000).toFixed(1)}s`;

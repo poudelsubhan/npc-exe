@@ -6,10 +6,10 @@ import { Pip } from "./World";
 
 const homes = [
   { x: 520, y: 155 },
-  { x: 725, y: 245 },
-  { x: 540, y: 365 },
-  { x: 320, y: 405 },
-  { x: 790, y: 430 },
+  { x: 725, y: 230 },
+  { x: 540, y: 300 },
+  { x: 320, y: 330 },
+  { x: 790, y: 340 },
 ];
 export function DepotWorld({
   level,
@@ -31,7 +31,14 @@ export function DepotWorld({
       onArrive();
       return;
     }
-    const timer = setInterval(() => setStop((current) => Math.min(current + 1, deliveries.length)), 1400);
+    const timer = setInterval(
+      () =>
+        setStop((current) => {
+          if (current >= deliveries.length - 1) clearInterval(timer);
+          return Math.min(current + 1, deliveries.length);
+        }),
+      1400,
+    );
     return () => clearInterval(timer);
   }, [success, deliveries.length, onArrive]);
   useEffect(() => {
@@ -45,7 +52,7 @@ export function DepotWorld({
   return (
     <div className="world depot-world">
       <svg
-        viewBox="0 0 960 610"
+        viewBox="55 80 850 360"
         role="img"
         aria-label={
           success
@@ -76,14 +83,14 @@ export function DepotWorld({
           />
         ))}
         <path
-          d="M120 287Q300 205 520 195T744 280Q720 380 540 400T320 438Q580 515 802 461"
+          d="M120 277Q300 205 520 195T744 270Q720 330 540 335T320 363Q580 425 802 375"
           fill="none"
           stroke="#496463"
           strokeWidth="23"
           strokeLinecap="round"
         />
         <path
-          d="M120 287Q300 205 520 195T744 280Q720 380 540 400T320 438Q580 515 802 461"
+          d="M120 277Q300 205 520 195T744 270Q720 330 540 335T320 363Q580 425 802 375"
           fill="none"
           stroke="#809087"
           strokeOpacity=".45"
@@ -91,10 +98,10 @@ export function DepotWorld({
           strokeDasharray="3 12"
         />
         {[
-          { x: 110, y: 400 },
+          { x: 110, y: 330 },
           { x: 390, y: 170 },
           { x: 830, y: 170 },
-          { x: 650, y: 475 },
+          { x: 650, y: 365 },
           { x: 215, y: 150 },
         ].map((p) => (
           <g key={p.x} transform={`translate(${p.x} ${p.y})`}>
@@ -103,7 +110,7 @@ export function DepotWorld({
             <path d="M-23-18L0-72 24-18Z" fill="#6d917a" />
           </g>
         ))}
-        <g transform="translate(190 230)">
+        <g transform="translate(190 220)">
           <ellipse cy="-10" rx="110" ry="90" fill="url(#lamp-glow)" />
           <path d="M-62-20v85h124v-85" fill="#997858" />
           <path d="M-75-20L0-80l75 60Z" fill="#59777b" />
@@ -153,20 +160,12 @@ export function DepotWorld({
             <Pip small />
           </foreignObject>
         </g>
-        <text x="96" y="532" className="map-label">
-          LITTLE LIGHT / EVENING SHIFT
-        </text>
-        <text x="96" y="556" className="town-caption">
-          {success
-            ? `${shipped} parcels delivered${held ? ` · ${held} waiting safely for stock` : " · every parcel accounted for"}`
-            : "The windows are waiting for a little light."}
-        </text>
       </svg>
       <div className="world-caption">
         <span className="coordinate">DEPOT {String(level.episode).padStart(3, "0")}</span>
         <span>
           {success
-            ? "Deliveries follow the verified manifest."
+            ? `${shipped} delivered · ${held} held for stock · verified manifest`
             : "Real orders. Real accounting. A town that feels it."}
         </span>
       </div>

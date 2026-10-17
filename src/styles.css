@@ -2279,3 +2279,57 @@ select:focus-visible {
     padding: 8px;
   }
 }
+.director-settings {
+  margin-top: 12px;
+}
+.director-settings summary {
+  color: #b2c4bf;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 4px 0;
+}
+.director-settings[open] summary {
+  color: #d5d3b9;
+}
+.has-run .director-card > p {
+  display: none;
+}
+.has-run .director-twist {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+@media (min-width: 801px) {
+  .game-layout {
+    min-height: 560px;
+  }
+  .world > svg {
+    padding-bottom: 22px;
+  }
+  .chapter h1 {
+    font-size: clamp(30px, 2.65vw, 40px);
+  }
+  .world-topline {
+    margin-top: 17px;
+  }
+  .app-shell.has-run .journey-heading h2 {
+    font-size: 24px;
+  }
+  .has-run .stages {
+    margin: 16px 0 12px;
+  }
+  .has-run .director-card {
+    padding: 12px 15px;
+    margin-top: 14px;
+  }
+}
+.depot-world > svg {
+  overflow: hidden;
+}
+@media (min-width: 801px) {
+  .app-shell:not(.has-run) .stages {
+    display: none;
+  }
+  .app-shell:not(.has-run) .launch-block {
+    margin-top: 18px;
+  }
+}

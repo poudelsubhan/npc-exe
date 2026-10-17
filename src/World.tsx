@@ -77,7 +77,7 @@ export function World({
   return (
     <div className={`world ${editing ? "world-editing" : ""}`}>
       <svg
-        viewBox="0 0 960 610"
+        viewBox="135 85 700 440"
         role={editing ? "group" : "img"}
         aria-label="Two islands separated by water. Pip is waiting for a way home."
       >

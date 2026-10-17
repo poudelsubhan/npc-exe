@@ -21,7 +21,10 @@ export const active = (run: Run | null) =>
 export class Game {
   scene = defaultScene();
   run: Run | null = null;
-  readonly profile = new ProfileStore(configuration().dataDir);
+  readonly profile: ProfileStore;
+  constructor(dataDir = configuration().dataDir) {
+    this.profile = new ProfileStore(dataDir);
+  }
   journalError: string | null = null;
   private ticket = "";
   private journey: PineJourney | null = null;

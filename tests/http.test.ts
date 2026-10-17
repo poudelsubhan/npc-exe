@@ -1,9 +1,13 @@
+import { mkdtemp, rm } from "node:fs/promises";
 import { createServer, request as httpRequest, type Server } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Game } from "../server/game";
 import { handler } from "../server/http";
 
-const game = new Game();
+let game: Game;
+let testDirectory = "";
 const config = {
   apiKey: "",
   endpoint: "",
@@ -27,6 +31,8 @@ async function listen(server: Server) {
   return address.port;
 }
 beforeAll(async () => {
+  testDirectory = await mkdtemp(join(tmpdir(), "npc-http-"));
+  game = new Game(testDirectory);
   owner = createServer(handler(false, game, config));
   workshop = createServer(handler(true, game, config));
   config.port = await listen(owner);
@@ -35,9 +41,11 @@ beforeAll(async () => {
   publicBase = `http://127.0.0.1:${config.workshopPort}`;
 });
 afterAll(async () => {
+  await game.shutdown();
   await Promise.all(
     [owner, workshop].map((server) => new Promise<void>((resolve) => server.close(() => resolve()))),
   );
+  await rm(testDirectory, { recursive: true, force: true });
 });
 describe("public workshop and local owner separation", () => {
   it("never exposes owner routes on the tunneled listener", async () => {

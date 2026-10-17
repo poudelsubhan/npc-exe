@@ -39,3 +39,6 @@ Verify seeded replay, restart, fresh-vs-journal context, bridge regression, depo
 1. 500 seeds × supported tiers: all generated bridge scenes solvable; same identity gives equal challenge; depot oracle manifests pass. Zero violations.
 2. All malformed/stale/oversubscribed manifests rejected; journal persists once and memory-off sends no entries. Offline tests on temporary directories, no paid calls.
 3. Live mission produces accepted artifact and released computer; report measured time/cost, not an improvement claim. Compare identical level identity when both modes have evidence.
+
+## Completion record
+All requested phases implemented. Phase 1 checkpoint: 5107b5f. Phase 2 checkpoint: 8e4fbd2. Final evidence is in docs/verification.md: 36 offline tests, 500-seed sweep at each tier, two verified live depot runs with released computers, exact-byte manual bridge regression, responsive and keyboard checks. No remote was created or pushed.

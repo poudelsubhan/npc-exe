@@ -1,8 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import type { GameState } from "../shared/contracts";
 import { type Cell, defaultScene, key, type Scene } from "../shared/domain";
-import { action, readState } from "./api";
-import { CampaignBar, Director, Journal } from "./Campaign";
+import { action, importArtifact, readState } from "./api";
+import { CampaignBar, Director, Journal, NextChapter } from "./Campaign";
 import { DepotWorld } from "./DepotWorld";
 import { Pip, World } from "./World";
 
@@ -122,11 +122,18 @@ export function App() {
       setError("Choose the small JSON blueprint downloaded by the workshop.");
       return;
     }
+    generation.current++;
+    mutating.current = true;
+    setPending(true);
+    setError("");
     try {
-      const input: unknown = JSON.parse(await file.text());
-      await act("/api/import", input);
-    } catch {
-      setError("That file is not a JSON blueprint. Choose the workshop download.");
+      setState(await importArtifact(file));
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "The file could not be imported. Please retry.");
+    } finally {
+      mutating.current = false;
+      generation.current++;
+      setPending(false);
     }
     if (importInput.current) importInput.current.value = "";
   }
@@ -327,7 +334,9 @@ export function App() {
             </div>
             <span className="journey-number">01—03</span>
           </div>
-          {state && <Director state={state} disabled={disabled || editing} act={act} />}
+          {state && (
+            <Director key={run?.id ?? "settings"} state={state} disabled={disabled || editing} act={act} />
+          )}
           <p className="journey-intro">
             A character leaves his game, uses real software, and brings back something his world can use.
           </p>
@@ -558,6 +567,7 @@ export function App() {
               <output className="sr-only" aria-live="polite">
                 {latestEvent?.text}
               </output>
+              {state && <NextChapter state={state} disabled={disabled} act={act} />}
               {running ? (
                 <button
                   type="button"
