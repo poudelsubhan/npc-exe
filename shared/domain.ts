@@ -21,7 +21,12 @@ export type Cell = z.infer<typeof CellSchema>;
 export const ColorSchema = z.enum(["amber", "mint", "rose"]);
 export type BridgeColor = z.infer<typeof ColorSchema>;
 export const SceneSchema = z
-  .object({ revision: z.number().int().positive(), rocks: z.array(CellSchema).max(14), color: ColorSchema })
+  .object({
+    revision: z.number().int().positive(),
+    rocks: z.array(CellSchema).max(14),
+    color: ColorSchema,
+    inkBudget: z.number().int().min(8).max(12).optional(),
+  })
   .strict();
 export type Scene = z.infer<typeof SceneSchema>;
 export const BlueprintSchema = z
@@ -99,6 +104,8 @@ export function verifyBlueprint(input: unknown, runId: string, scene: Scene): Ve
       reason: "This blueprint belongs to a different journey. Export a fresh one from the current workshop.",
     };
   if (bp.color !== scene.color) return { ok: false, reason: "The bridge color does not match your request." };
+  if (bp.cells.length > (scene.inkBudget ?? INK_BUDGET))
+    return { ok: false, reason: "This bridge uses more ink than the current level allows." };
   const cells = new Set(bp.cells.map(key));
   if (cells.size !== bp.cells.length) return { ok: false, reason: "A tile appears twice in this blueprint." };
   const rocks = new Set(scene.rocks.map(key));
@@ -122,9 +129,9 @@ export function checkScene(scene: Scene): string | null {
     const current = queue.shift();
     if (!current) break;
     if (sameCell(current.cell, GOAL))
-      return current.cost <= INK_BUDGET
+      return current.cost <= (scene.inkBudget ?? INK_BUDGET)
         ? null
-        : "That challenge needs more than 12 bridge tiles. Remove a rock to leave a possible route.";
+        : `That challenge needs more than ${scene.inkBudget ?? INK_BUDGET} bridge tiles. Remove a rock to leave a possible route.`;
     for (const cell of [
       { x: current.cell.x + 1, y: current.cell.y },
       { x: current.cell.x - 1, y: current.cell.y },
