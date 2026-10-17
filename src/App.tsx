@@ -74,6 +74,7 @@ export function App() {
   const cleanupPending = run?.cleanup === "pending" && !running;
   const disabled = pending || running || !!cleanupPending || !state;
   const successful = run?.status === "succeeded";
+  const arrivedHome = arrived && successful && !editing;
   const stage = successful ? 2 : run?.status === "working" || run?.status === "verifying" ? 1 : 0;
   async function start(mode: "pine" | "manual") {
     setArrived(false);
@@ -152,9 +153,11 @@ export function App() {
         <section className="world-panel" aria-label="Pip’s world">
           <div className="chapter">
             <span className="eyebrow">A SMALL EXPERIMENT IN AGENCY</span>
-            <h1>{arrived && !editing ? "A little more possible." : "He wasn’t programmed\nto get home."}</h1>
+            <h1>{arrivedHome ? "A little more possible." : "He wasn’t programmed\nto get home."}</h1>
             <p>
-              {arrived ? "One real file. One new possibility in his world." : "So you gave him a computer."}
+              {arrivedHome
+                ? "One real file. One new possibility in his world."
+                : "So you gave him a computer."}
             </p>
           </div>
           <div className="world-topline">
@@ -182,7 +185,7 @@ export function App() {
                 <p>
                   {editing
                     ? "“You decide what gets in the way.”"
-                    : arrived
+                    : arrivedHome
                       ? "“I made this. And it brought me home.”"
                       : running
                         ? "“If I can draw it there… maybe I can use it here.”"
@@ -261,7 +264,7 @@ export function App() {
           <div className="journey-heading">
             <div>
               <span className="eyebrow">BEYOND THE SCRIPT</span>
-              <h2>{arrived && !editing ? "He found a way." : "Give him a way out."}</h2>
+              <h2>{arrivedHome ? "He found a way." : "Give him a way out."}</h2>
             </div>
             <span className="journey-number">01—03</span>
           </div>
@@ -368,7 +371,7 @@ export function App() {
                         preparing: "Opening Pip’s computer",
                         working: "Pip is in the workshop",
                         verifying: "Checking the real file",
-                        succeeded: arrived ? "Delivery complete" : "A bridge enters the world",
+                        succeeded: arrivedHome ? "Delivery complete" : "A bridge enters the world",
                         failed: "The journey needs another try",
                         canceled: "Paused at the shore",
                       }[run.status]}
