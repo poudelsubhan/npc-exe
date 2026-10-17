@@ -7,7 +7,7 @@ A local single-player game: Pip uses a real Pine computer to solve seeded bridge
 - Artifacts are bounded JSON data; never execute imported content. Bridges require current run/revision, bounds, rocks, ink and connectivity. Depot manifests require current run/level and exact order/stock reconciliation.
 - Profile writes are serialized and atomic. Never overwrite unreadable history or present manual outcomes as live mastery. Fresh-Pip mode withholds all journal context.
 - Tests must use temporary profile directories; never mutate the user’s data/profile.json.
-- One active run. Scene is frozen while running. All Pine computers must be stopped in finally and on shutdown.
+- One active run. Scene is frozen while running, except one explicit run-scoped depot stock change queued by the owner and applied at first artifact inspection. Preserve original and revised levels and independently verify the repaired export. All Pine computers must be stopped in finally and on shutdown.
 - Default tests are offline. Live smoke tests are explicit and limited.
 - Do not log secrets or read .env into tool output.
 

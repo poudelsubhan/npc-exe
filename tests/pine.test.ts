@@ -101,3 +101,48 @@ describe("Pine boundary, synthetic provider responses only", () => {
     expect(observers.artifact).not.toHaveBeenCalled();
   });
 });
+
+it("repairs once on the same computer and session, ignores old artifacts and aggregates usage", async () => {
+  const usage = { llm: { totalTokens: 100 }, cost: { total: 0.01, currency: "USD" } };
+  fake.run.mockResolvedValue({
+    turnId: "turn",
+    state: "completed",
+    result: { terminalReason: "completed", summary: "Exported", usage },
+  });
+  fake.artifacts
+    .mockResolvedValueOnce([{ id: "first", filename: "dispatch.json", size: 2 }])
+    .mockResolvedValueOnce([
+      { id: "first", filename: "dispatch.json", size: 2 },
+      { id: "second", filename: "dispatch.json", size: 2 },
+    ]);
+  fake.read.mockResolvedValue(Buffer.from("{}"));
+  const observers = {
+    ...hooks(),
+    usage: vi.fn(),
+    repairing: vi.fn(),
+    feedback: () => "Stock changed to five blankets.",
+  };
+  observers.artifact.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+  await new PineJourney(config, observers).run("test-run", "https://example.invalid/workshop", "depot");
+  expect(fake.create).toHaveBeenCalledTimes(1);
+  expect(fake.run).toHaveBeenCalledTimes(2);
+  expect(fake.read.mock.calls.map((c) => c[0])).toEqual(["first", "second"]);
+  expect(fake.run.mock.calls[1]?.[0]).toContain("Stock changed to five blankets");
+  expect(fake.run.mock.calls[1]?.[1].constraints.maxTokens).toBe(511900);
+  expect(observers.usage).toHaveBeenLastCalledWith({ tokens: 200, cost: 0.02, currency: "USD" });
+  expect(observers.repairing).toHaveBeenCalledTimes(1);
+  expect(fake.stop).toHaveBeenCalledTimes(1);
+});
+it("stops after a rejected repair and releases its single computer", async () => {
+  fake.artifacts
+    .mockResolvedValueOnce([{ id: "first", filename: "dispatch.json", size: 2 }])
+    .mockResolvedValueOnce([{ id: "second", filename: "dispatch.json", size: 2 }]);
+  fake.read.mockResolvedValue(Buffer.from("{}"));
+  const observers = hooks();
+  observers.artifact.mockResolvedValue(false);
+  await expect(
+    new PineJourney(config, observers).run("test-run", "https://example.invalid/workshop"),
+  ).rejects.toThrow(/did not pass/);
+  expect(fake.run).toHaveBeenCalledTimes(2);
+  expect(fake.stop).toHaveBeenCalledTimes(1);
+});

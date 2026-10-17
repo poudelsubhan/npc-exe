@@ -4,7 +4,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, resolve, sep } from "node:path";
 import { z } from "zod";
 import { CampaignCommandSchema } from "../shared/campaign";
-import { ChallengeSchema } from "../shared/contracts";
+import { ChallengeSchema, ChangeCommandSchema } from "../shared/contracts";
 import type { Configuration } from "./config";
 import type { Game } from "./game";
 
@@ -101,6 +101,15 @@ export function handler(publicWorkshop: boolean, game: Game, config: Configurati
         }
         if (req.method === "GET" && url.pathname === "/api/state") {
           json(res, game.state());
+          return;
+        }
+        if (req.method === "POST" && url.pathname === "/api/change-order") {
+          game.queueChange(ChangeCommandSchema.parse(JSON.parse((await body(req)).toString())));
+          json(res, game.state());
+          return;
+        }
+        if (req.method === "GET" && url.pathname === "/api/replay") {
+          json(res, await game.replay(z.string().uuid().parse(url.searchParams.get("id"))));
           return;
         }
         if (req.method === "POST" && url.pathname === "/api/challenge") {

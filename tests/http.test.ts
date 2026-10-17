@@ -49,7 +49,16 @@ afterAll(async () => {
 });
 describe("public workshop and local owner separation", () => {
   it("never exposes owner routes on the tunneled listener", async () => {
-    for (const route of ["/api/state", "/api/run", "/api/desktop", "/api/receipt", "/api/campaign", "/"]) {
+    for (const route of [
+      "/api/state",
+      "/api/run",
+      "/api/desktop",
+      "/api/receipt",
+      "/api/campaign",
+      "/api/change-order",
+      "/api/replay",
+      "/",
+    ]) {
       expect((await fetch(`${publicBase}${route}`)).status).toBe(404);
     }
     expect(
