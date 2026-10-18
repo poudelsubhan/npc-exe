@@ -16,7 +16,7 @@ A local single-player game: Pip uses a real Pine computer to solve seeded bridge
 - In-memory execution plus atomic local campaign/journal and artifact receipts instead of Postgres: single-owner demo. Restart preserves campaign/journal but loses active execution; Pine TTL bounds orphan lifetime. Add durable transactional jobs/storage before multi-user hosting.
 - Native HTTP + periodic read-only polling instead of additional server/query frameworks: one current run, no cache invalidation or realtime event bus needed.
 - Initial implementation exceeds 400 lines because this is a complete greenfield game; split into domain, Pine adapter, HTTP boundary, world and workshop.
-- Local-only project: no deployment or git remote was requested. Commit locally after checks; push only once a destination exists.
+- Public source publication is authorized at poudelsubhan/npc-exe. Keep .env, data/, tunnel URLs and all credentials untracked; the running application remains a single-owner local demo.
 
 ## Checks
 npm run check

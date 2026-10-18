@@ -1,73 +1,164 @@
 # NPC.exe — The Little Light Chronicles
 
-Pip borrows a real computer, solves seeded challenges and brings verified files back into his world. A Director adapts the next challenge. Pip’s journal persists. A delivery-depot mission turns real orders CSVs and dispatch manifests into visible consequences.
+**An AI courier uses a real computer to help his village. Only verified work changes the world.**
 
-## Run
+Pip reads orders, fills out a worksheet, and exports a shipping plan on a real Pine Computer. When inventory changes, his first file is rejected. He must reopen the task, correct his work, and produce a valid replacement before the village receives its deliveries.
 
-Requires Node 22.12+ and a Pine project key. The project has been installed and built locally. For this configured copy, run `npm run demo` to start both the game and its temporary workshop tunnel.
+Built for the Pine Computer hackathon, October 17, 2026.
+
+## The point, in plain English
+
+An agent saying “done” is not enough. Did it produce the right result? Can it recover when the situation changes?
+
+NPC.exe makes those questions visible. A game provides the stakes, a real computer provides the workspace, and independent checks decide whether the work counts. The result is a small, inspectable testbed for computer-using agents.
+
+There are three main parts:
+
+- **Pip is the worker.** The agent operates the browser and solves the task.
+- **The world shows the consequences.** Verified files become bridges or deliveries.
+- **The Director sets the challenge.** Repeatable levels become harder or easier based on verified live outcomes.
+
+## The recovery demo
+
+1. Start a delivery-depot journey. Pip reads the orders and available stock.
+2. Queue **Damage 2 at inspection** while he works.
+3. Pip fills the worksheet and downloads a real dispatch manifest.
+4. When that first file arrives, the queued damage changes inventory. The verifier returns the outdated file with an explanation.
+5. Pip gets one repair turn on the same Pine computer. He reloads the workshop, reads the revised stock, corrects the worksheet, and exports again.
+6. The verifier checks the new file. Only a valid result causes deliveries in the village.
+
+In the recorded rehearsal, blanket stock fell from **7 to 5**. The first plan shipped 11 items and held 2; the corrected plan shipped **9 and held 4**. The second export passed after **47.491 seconds** from journey start. Both exact exports and their check results were retained locally.
+
+The disruption, rules, and animations are authored. The browser work and repair were performed by the agent. The worksheet does not calculate shipping quantities for Pip.
+
+## What the export files mean
+
+An export is the actual result of the work, not a screenshot or a claim of success. Pip enters values into our workshop; its export button packages those values as JSON and downloads the file on his Pine computer. The server retrieves that artifact through Pine and checks it independently.
+
+| Field | Meaning |
+|---|---|
+| `schemaVersion` | Version of the file format |
+| `kind` | `dispatch` identifies a delivery manifest |
+| `runId` | The journey that produced the file |
+| `levelId` | The challenge and inventory revision it answers |
+| `entries` | One shipping decision per unique order |
+| `note` | Pip's note for a future journey |
+
+An entry such as `{"orderId":"P113","ship":3,"hold":1}` means send three items for that order and leave one waiting for stock.
+
+The verifier requires the current journey and level, each unique order exactly once, and exact quantities allocated in first-seen order. It rejects overshipping, incorrect holds, missing orders, and stale exports. A SHA-256 fingerprint identifies each retained file's contents; it is an integrity check, not a digital signature.
+
+## Missions, memory, and replay
+
+- **Crossing:** draw a bridge in the browser within an ink budget, avoid rocks, and export a connected route.
+- **Delivery depot:** reconcile orders and inventory. Higher tiers add duplicate rows and shortages.
+- **Seeded levels:** the same generator version, seed, chapter, mission, and tier recreate the same challenge. Agent actions can still differ.
+- **Director:** deterministic rules choose among three difficulty tiers per mission using verified live results. Manual play does not establish mastery.
+- **Persistent journal:** successful live journeys can supply notes to later tasks of the same kind. Turn **Bring the journal** off for a fresh comparison. This is saved context, not model retraining; a verified output does not prove every sentence in its note is true.
+- **Presentation mode:** foregrounds the drawings, objective, computer, and artifact handoff.
+- **Replay a journey:** reconstructs saved events and displays actual retained exports. It is clearly labeled, uses no Pine credits, and contains no recorded browser video. **Retry this exact level** instead prepares a new live attempt.
+
+## Run locally
+
+Requirements: Node.js **22.12+**, npm, a Pine API key for live runs, and the `cloudflared` executable for the temporary workshop tunnel. Manual play needs neither Pine credentials nor a tunnel.
 
 ```sh
-cd ~/Projects/npc
-npm install
-cp .env.example .env # only on a fresh checkout; do not overwrite your existing key
-# Set PINE_SANDBOX_API_KEY in .env, never in client code.
+git clone https://github.com/poudelsubhan/npc-exe.git
+cd npc-exe
+npm ci
+cp .env.example .env
+# Add PINE_SANDBOX_API_KEY to .env. Never put it in browser code.
 npm run build
-npm start
+npm run demo
 ```
 
-In another terminal, expose only the restricted workshop:
+Open **http://localhost:3210**. `npm run demo` starts the game and a temporary tunnel to its restricted workshop on port 3211. It does not start a paid agent; live work begins when you click **Give Pip a computer**. Keep the terminal open; Ctrl+C stops both processes and initiates cleanup.
 
-```sh
-cd ~/Projects/npc
-npm run tunnel
+For manual play, use `npm start` instead of `npm run demo`, open the manual workshop, complete the task, export, and import the downloaded JSON into the game. Manual results are labeled.
+
+For a separately managed tunnel, run `npm start` and `npm run tunnel` in separate terminals, or set `WORKSHOP_PUBLIC_URL` to an existing tunnel targeting port 3211. Install `cloudflared` using the [official instructions](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/downloads/).
+
+| Configuration | Purpose |
+|---|---|
+| `PINE_SANDBOX_API_KEY` | Server-side Pine credential; required for live play |
+| `PINE_SANDBOX_ENDPOINT` | Pine API endpoint; default is in `.env.example` |
+| `WORKSHOP_PUBLIC_URL` | Optional stable workshop URL; otherwise use the temporary tunnel |
+| `PORT` | Local owner interface, default `3210` |
+| `WORKSHOP_PORT` | Restricted workshop listener, default `3211` |
+
+**Never tunnel port 3210.** Owner controls and credentials stay on the local side. Only the restricted workshop is designed for public reachability.
+
+A fresh clone starts with an empty journal and no saved live replays. Private `data/`, `.env`, and `.tunnel-url` are excluded from this repository. Complete a successful live journey to create your own replay.
+
+## How it works
+
+```text
+Seed + level settings --> Director / challenge generator
+                                    |
+                                    v
+Pip on Pine Computer --> workshop --> exported JSON
+                                         |
+                                  independent verifier
+                                    /             \
+                             returned           accepted
+                                |                   |
+                      feedback + one repair    world animation
+                                                    |
+                                             journal + receipt
+                                                    |
+                                             labeled replay
 ```
 
-Open **http://localhost:3210**. The tunnel helper uses the installed `cloudflared` command and writes its temporary URL to `.tunnel-url`. Keep both terminals open for live play. Ctrl+C stops them; the game cancels its agent and releases its computer on graceful shutdown. For a stable tunnel, set `WORKSHOP_PUBLIC_URL` in `.env` instead. The app rereads configuration before each run, so adding a key or starting a tunnel does not require a restart.
+React renders the game, original SVG drawings, workshop, and embedded Pine desktop. A Node/TypeScript server owns the run lifecycle and uses the official Pine SDK. Shared Zod schemas validate incoming data. The verifier uses deterministic task rules rather than asking the agent whether it succeeded.
 
-Manual rehearsal works without a Pine key or tunnel: open the workshop, draw, export, then import the downloaded JSON file. Manual play is always labeled.
+| Directory | Responsibility |
+|---|---|
+| `src/` | Game, drawings, workshops, live desktop, presentation and replay |
+| `shared/` | Schemas, seeded generation, Director rules, and independent checks |
+| `server/` | Owner/workshop HTTP boundaries, Pine integration, lifecycle, persistence |
+| `tests/` | Offline rules, recovery, replay, lifecycle, and boundary tests |
+| `docs/` | Demo guide, system design, verification evidence, dependency notices |
+| `data/` | Local-only journal, exact artifacts, and receipts; created at runtime |
 
-## Play
+Campaign and journal writes are atomic. Active execution stays in memory and does not resume after restart. Each journey has one computer, at most two agent turns, a shared token budget, time limits, and cleanup. Saved receipts retain rejected and accepted export contents, timestamps, checks, and reported usage. Replay validates retained hashes and results before showing them.
 
-- **Present** foregrounds the village, objective and real computer.
-- During a depot run, **Damage 2 at inspection** queues a real stock change. The first exported manifest is checked against the changed stock; Pip gets one repair turn on the same computer. Click either animated export to inspect its exact bytes and verifier result.
-- **Replay a journey** plays saved events and artifacts from a verified Pine run. It is always labeled, requires no Pine credits, survives restart, and does not include browser video. **Retry this exact level** prepares another live attempt instead.
-
-- Enter a seed to create a reproducible world. Choose Crossing or Delivery depot and one of three difficulty tiers.
-- **Give Pip a computer** starts a real Pine browser. Artifacts must pass independent checks before they affect the game.
-- **Let the Director choose** selects the next level from verified live results. Manual work remains labeled and does not establish mastery.
-- **Pip’s journal** retains field notes, evidence and measurements across restarts. Only verified live notes are recalled for future tasks of the same kind.
-- Toggle **Bring the journal** and replay the same level to compare a fresh trial with one receiving prior notes. Each trial requires an explicit start.
-- Depot difficulty 3 includes duplicate order rows and limited stock. Pip fills a dispatch worksheet; its verified export determines actual shipments and holds in Little Light village.
-
-See [the demo script](docs/demo.md), [system design](docs/system-design.md), and [verification evidence](docs/verification.md).
-
-## What is real, what is authored
-
-Art, dialogue and missions are authored. The Director is deterministic. Pine’s browser actions, exported data, field notes and provider usage are real. Independent rules decide success. Journal memory supplies prior procedures; model weights do not change. A valid artifact proves a task outcome, not the accuracy of every reflection. One comparison pair does not prove improvement. Depot records are synthetic; no production logistics service is connected.
-
-## Checks
+## Verification and limits
 
 ```sh
 npm run check
 npm audit --omit=dev
 ```
 
-The default suite is offline: domain edge cases, lifecycle, mocked Pine failure/cleanup cases, and real local HTTP boundary checks. It never calls Pine. Live play is explicitly triggered from the UI and uses credits. Runtime is ephemeral, one computer at a time, with a 120-second idle lease, at most two agent turns (one repair), a four-minute per-turn wall limit, a shared 512K token budget, a six-minute outer deadline and cleanup in `finally`. The token allowance includes Pine’s large repeated/cached context; a very small cap can end a run before the first edit. Exact provider usage appears in the activity log when available.
+The verified hackathon build passed **46 offline tests across 10 files**, strict TypeScript, Biome, dependency license checks, and the production build. Default tests use temporary data and make no paid Pine calls.
 
-## Files and recovery
+The live recovery rehearsal demonstrated one genuine rejected export followed by a valid correction on the same computer. It does not establish broad reliability. An earlier fresh-versus-journal comparison did not show a performance improvement; memory plumbing works, but improvement is not claimed.
 
-- `src/`: game, original SVG world, workshop and live desktop.
-- `shared/`: parsed contracts, puzzle rules and independent verifier.
-- `server/`: two HTTP listeners, run lifecycle and official Pine SDK adapter.
-- `data/bridge-<run>.json` or `data/dispatch-<run>.json`: exact verified download.
-- `data/profile.json`: private, atomically replaced campaign and last 200 journey entries.
-- `data/receipt-<run>.json`: journey record, checks, fingerprint, exact rejected/accepted export text, stock change and provider activity. Replay rechecks retained file hashes and independent rules.
-- `tests/`: no-cost default verification.
+The depot uses synthetic orders in a purpose-built website. There is no production warehouse integration. This is a single-owner local demo, not a hosted multi-user service. Longer-running production work would need durable jobs, stronger operational controls, and evaluation across many tasks.
 
-The campaign and journal persist in `data/profile.json`. Active execution stays in memory and is not resumed after restart. Evidence files remain in `data/`. An interrupted or failed run cannot create a bridge or deliver parcels. An explicitly queued depot stock change remains part of the revised challenge even if repair fails. Cancel and Retry retain the current challenge. Never tunnel port 3210: only port 3211 is designed for public reachability. The project is a single-owner local demo, not a hosted multiplayer service.
+See the [demo guide](docs/demo.md), [system design](docs/system-design.md), [verification record](docs/verification.md), and [third-party notices](docs/third-party-notices.md). Pine integration documentation is available [here](https://console.pinecomputer.io/docs/integration).
 
-## Dependencies
+## Where this could go
 
-Pine server SDK 0.3.3 and browser SDK 0.3.7 (Apache-2.0); React, Vite, TypeScript, tsx, Vitest, Zod and Biome (see the dependency notices for all licenses, including MPL-2.0 and CC-BY-4.0 transitive components). `package-lock.json` pins the full dependency graph. React handles the game, journal and both workspaces; Zod parses untrusted JSON; the Pine SDK handles lifecycle/transport; Vite builds and lazily loads the live desktop. No database, background queue, agent framework or UI component library is needed.
+The same pattern could test agents handling inventory, invoices, scheduling, or other office workflows: give them repeatable tasks, introduce changed information, validate the actual output, and measure recovery. These are potential applications, not integrations already built.
 
-Official integration reference: https://console.pinecomputer.io/docs/integration
+## Key concepts
+
+| Concept | Simple explanation |
+|---|---|
+| Pip | The AI worker operating a computer |
+| World | The visible consequences of verified work |
+| Director | The deterministic challenge setter |
+| Seed | A repeatable starting point for a level |
+| Pine Computer | Pip's real cloud computer, browser, and files |
+| Workshop | The task website we built for Pip to operate |
+| Artifact | The actual exported result of the work |
+| Schema | The agreed structure of an artifact |
+| Verifier | Code that checks the result against current facts |
+| Change order | An explicit change to stock while the task is underway |
+| Recovery | Correcting work after receiving a failed check |
+| Journal | Saved lessons supplied as context to future runs |
+| Replay | A labeled reconstruction of saved events and real files |
+
+## Keywords
+
+`ai-agents` · `computer-use` · `pine-computer` · `agent-evaluation` · `agent-reliability` · `agent-memory` · `browser-automation` · `artifact-verification` · `error-recovery` · `procedural-generation` · `seeded-levels` · `deterministic-simulation` · `game-development` · `interactive-demo` · `replay` · `typescript` · `react` · `nodejs` · `vite` · `hackathon`
